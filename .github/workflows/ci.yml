@@ -43,3 +43,7 @@ jobs:
 
       - name: Unit tests
         run: dotnet test Orisia.Server.Tests.Unit/Orisia.Server.Tests.Unit.csproj --configuration Release --no-build --verbosity normal
+
+      - name: Build Render Docker image
+        working-directory: .
+        run: docker build -t orisia-server:ci .
