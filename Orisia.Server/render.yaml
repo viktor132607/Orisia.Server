@@ -4,7 +4,7 @@ previews:
 services:
   - type: web
     runtime: docker
-    name: orisia-api
+    name: Orisia.Server
     repo: https://github.com/viktor132607/Orisia.Server.git
     branch: main
     plan: free
@@ -24,7 +24,7 @@ services:
         value: "true"
       - key: ConnectionStrings__DefaultConnection
         fromDatabase:
-          name: orisia-db
+          name: orisiadb
           property: connectionString
       - key: Jwt__Issuer
         value: Orisia.Server.API
@@ -37,9 +37,9 @@ services:
       - key: Jwt__RefreshTokenExpiryDays
         value: "30"
       - key: ClientApp__BaseUrl
-        value: https://orisia-client.onrender.com
+        value: https://orisia-client-zgwt.onrender.com
       - key: Cors__AllowedOrigins__0
-        value: https://orisia-client.onrender.com
+        value: https://orisia-client-zgwt.onrender.com
       - key: Cors__AllowedOrigins__1
         value: http://localhost:3000
       - key: Cors__AllowedOrigins__2
@@ -82,8 +82,8 @@ services:
 databases:
   - name: orisia-db
     databaseName: orisiadb
-    user: orisia
+    user: orisiadb_user
     plan: free
     region: frankfurt
-    postgresMajorVersion: "16"
+    postgresMajorVersion: "18"
     ipAllowList: []
