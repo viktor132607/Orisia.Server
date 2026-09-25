@@ -35,7 +35,23 @@ public class MediaRepository(ApplicationDbContext context)
             return true;
         }
 
-        return await Context.Events.AnyAsync(item =>
+        bool usedByEvent = await Context.Events.AnyAsync(item =>
             !item.IsDeleted && item.CoverMediaId == id);
+
+        if (usedByEvent)
+        {
+            return true;
+        }
+
+        bool usedAsAlbumCover = await Context.GalleryAlbums.AnyAsync(album =>
+            !album.IsDeleted && album.CoverMediaId == id);
+
+        if (usedAsAlbumCover)
+        {
+            return true;
+        }
+
+        return await Context.GalleryMedia.AnyAsync(item =>
+            !item.IsDeleted && item.MediaId == id);
     }
 }

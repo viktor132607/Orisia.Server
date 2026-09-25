@@ -105,6 +105,47 @@ partial class ApplicationDbContextModelSnapshot : ModelSnapshot
             b.ToTable("Events");
         });
 
+        modelBuilder.Entity("Orisia.Server.Data.Entities.GalleryAlbum", b =>
+        {
+            b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uuid");
+            b.Property<bool>("Active").HasColumnType("boolean");
+            b.Property<Guid?>("CoverMediaId").HasColumnType("uuid");
+            b.Property<DateTime>("CreatedOn").HasColumnType("timestamp with time zone");
+            b.Property<string>("DescriptionBg").HasMaxLength(1000).HasColumnType("character varying(1000)");
+            b.Property<string>("DescriptionEn").HasMaxLength(1000).HasColumnType("character varying(1000)");
+            b.Property<bool>("Featured").HasColumnType("boolean");
+            b.Property<bool>("IsDeleted").HasColumnType("boolean");
+            b.Property<DateTime>("ModifiedOn").HasColumnType("timestamp with time zone");
+            b.Property<string>("Slug").IsRequired().HasMaxLength(180).HasColumnType("character varying(180)");
+            b.Property<int>("SortOrder").HasColumnType("integer");
+            b.Property<string>("TitleBg").IsRequired().HasMaxLength(250).HasColumnType("character varying(250)");
+            b.Property<string>("TitleEn").IsRequired().HasMaxLength(250).HasColumnType("character varying(250)");
+            b.HasKey("Id");
+            b.HasIndex("Active", "Featured", "SortOrder");
+            b.HasIndex("CoverMediaId");
+            b.HasIndex("Slug").IsUnique().HasFilter("\"IsDeleted\" = false");
+            b.ToTable("GalleryAlbums");
+        });
+
+        modelBuilder.Entity("Orisia.Server.Data.Entities.GalleryMedia", b =>
+        {
+            b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uuid");
+            b.Property<bool>("Active").HasColumnType("boolean");
+            b.Property<string>("CaptionBg").HasMaxLength(500).HasColumnType("character varying(500)");
+            b.Property<string>("CaptionEn").HasMaxLength(500).HasColumnType("character varying(500)");
+            b.Property<DateTime>("CreatedOn").HasColumnType("timestamp with time zone");
+            b.Property<Guid>("GalleryAlbumId").HasColumnType("uuid");
+            b.Property<bool>("IsDeleted").HasColumnType("boolean");
+            b.Property<Guid>("MediaId").HasColumnType("uuid");
+            b.Property<DateTime>("ModifiedOn").HasColumnType("timestamp with time zone");
+            b.Property<int>("SortOrder").HasColumnType("integer");
+            b.HasKey("Id");
+            b.HasIndex("GalleryAlbumId", "MediaId").IsUnique().HasFilter("\"IsDeleted\" = false");
+            b.HasIndex("GalleryAlbumId", "SortOrder");
+            b.HasIndex("MediaId");
+            b.ToTable("GalleryMedia");
+        });
+
         modelBuilder.Entity("Orisia.Server.Data.Entities.Media", b =>
         {
             b.Property<Guid>("Id")
@@ -335,6 +376,34 @@ partial class ApplicationDbContextModelSnapshot : ModelSnapshot
             b.Navigation("CoverMedia");
         });
 
+        modelBuilder.Entity("Orisia.Server.Data.Entities.GalleryAlbum", b =>
+        {
+            b.HasOne("Orisia.Server.Data.Entities.Media", "CoverMedia")
+                .WithMany()
+                .HasForeignKey("CoverMediaId")
+                .OnDelete(DeleteBehavior.SetNull);
+
+            b.Navigation("CoverMedia");
+        });
+
+        modelBuilder.Entity("Orisia.Server.Data.Entities.GalleryMedia", b =>
+        {
+            b.HasOne("Orisia.Server.Data.Entities.GalleryAlbum", "GalleryAlbum")
+                .WithMany("Items")
+                .HasForeignKey("GalleryAlbumId")
+                .OnDelete(DeleteBehavior.Cascade)
+                .IsRequired();
+
+            b.HasOne("Orisia.Server.Data.Entities.Media", "Media")
+                .WithMany()
+                .HasForeignKey("MediaId")
+                .OnDelete(DeleteBehavior.Restrict)
+                .IsRequired();
+
+            b.Navigation("GalleryAlbum");
+            b.Navigation("Media");
+        });
+
         modelBuilder.Entity("Orisia.Server.Data.Entities.Media", b =>
         {
             b.HasOne("Orisia.Server.Data.Entities.User", "UploadedBy")
@@ -360,6 +429,11 @@ partial class ApplicationDbContextModelSnapshot : ModelSnapshot
             b.Navigation("Author");
 
             b.Navigation("CoverMedia");
+        });
+
+        modelBuilder.Entity("Orisia.Server.Data.Entities.GalleryAlbum", b =>
+        {
+            b.Navigation("Items");
         });
 
         modelBuilder.Entity("Orisia.Server.Data.Entities.User", b =>

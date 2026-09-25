@@ -18,6 +18,7 @@ public static class ServiceExtension
         services.AddTransient<ICalendarService, CalendarService>();
         services.AddTransient<IFeedService, FeedService>();
         services.AddTransient<IMediaService, MediaService>();
+        services.AddTransient<IGalleryService, GalleryService>();
         services.AddSingleton<IPasswordResetTokenStore, MemoryPasswordResetTokenStore>();
         services.AddSingleton<IEmailNotificationService, ConsoleEmailNotificationService>();
         services.AddSingleton<IMediaStorage, LocalMediaStorage>();
@@ -26,6 +27,7 @@ public static class ServiceExtension
         services.AddScoped<IPostRepository, PostRepository>();
         services.AddScoped<IEventRepository, EventRepository>();
         services.AddScoped<IMediaRepository, MediaRepository>();
+        services.AddScoped<IGalleryRepository, GalleryRepository>();
 
         return services;
     }

@@ -3,7 +3,7 @@ using Microsoft.Extensions.Options;
 using Orisia.Server.Common.Options;
 using Orisia.Server.Common.Responses.Media;
 using Orisia.Server.Core.Exceptions;
-using Orisia.Server.Data.Entities;
+using DataMedia = Orisia.Server.Data.Entities.Media;
 using Orisia.Server.Data.Interfaces;
 using Orisia.Server.Domain.Interfaces;
 using Orisia.Server.Domain.Media;
@@ -93,7 +93,7 @@ public class MediaService(
 
             Guid? uploaderId = await GetCurrentUserIdAsync();
 
-            Media entity = new()
+            DataMedia entity = new()
             {
                 OriginalFileName = SanitizeFileName(input.OriginalFileName),
                 StorageKey = storageKey,
@@ -109,7 +109,7 @@ public class MediaService(
                 UploadedById = uploaderId
             };
 
-            Media? created = await mediaRepository.AddAsync(entity);
+            DataMedia? created = await mediaRepository.AddAsync(entity);
             if (created is null)
             {
                 throw new AppException("Media could not be saved.").SetStatusCode(500);
@@ -135,13 +135,13 @@ public class MediaService(
 
     public async Task<IEnumerable<MediaResponse>> GetAllAsync()
     {
-        IEnumerable<Media> items = await mediaRepository.GetAllWithUploaderAsync();
+        IEnumerable<DataMedia> items = await mediaRepository.GetAllWithUploaderAsync();
         return items.Select(Map);
     }
 
     public async Task<MediaResponse> GetByIdAsync(Guid id)
     {
-        Media? item = await mediaRepository.GetWithUploaderAsync(id);
+        DataMedia? item = await mediaRepository.GetWithUploaderAsync(id);
         if (item is null)
         {
             throw new AppException("Media not found.").SetStatusCode(404);
@@ -154,7 +154,7 @@ public class MediaService(
         Guid id,
         CancellationToken cancellationToken = default)
     {
-        Media? item = await mediaRepository.GetWithUploaderAsync(id);
+        DataMedia? item = await mediaRepository.GetWithUploaderAsync(id);
         if (item is null)
         {
             throw new AppException("Media not found.").SetStatusCode(404);
@@ -181,7 +181,7 @@ public class MediaService(
         return true;
     }
 
-    private MediaResponse Map(Media item)
+    private MediaResponse Map(DataMedia item)
     {
         return new MediaResponse
         {
