@@ -130,6 +130,21 @@ public class EventRepository(ApplicationDbContext context)
             .ToListAsync();
     }
 
+    public async Task<IEnumerable<Event>> GetCalendarCandidatesAsync(
+        DateTime from,
+        DateTime to)
+    {
+        return await PublishedQuery()
+            .Where(item =>
+                (item.RecurrenceRule != null && item.StartAt <= to)
+                || (
+                    item.RecurrenceRule == null
+                    && item.StartAt <= to
+                    && (item.EndAt ?? item.StartAt) >= from))
+            .OrderBy(item => item.StartAt)
+            .ToListAsync();
+    }
+
     private IQueryable<Event> PublishedQuery()
     {
         return Context.Events

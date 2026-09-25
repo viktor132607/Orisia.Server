@@ -27,4 +27,8 @@ public interface IEventRepository : IRepository<Event>
     Task<IEnumerable<Event>> GetForAdminAsync(
         EventType? type = null,
         PublicationStatus? status = null);
+
+    Task<IEnumerable<Event>> GetCalendarCandidatesAsync(
+        DateTime from,
+        DateTime to);
 }
