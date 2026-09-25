@@ -21,6 +21,75 @@ partial class ApplicationDbContextModelSnapshot : ModelSnapshot
 
         NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+        modelBuilder.Entity("Orisia.Server.Data.Entities.ContactInquiry", b =>
+        {
+            b.Property<Guid>("Id")
+                .ValueGeneratedOnAdd()
+                .HasColumnType("uuid");
+
+            b.Property<string>("AnswerText")
+                .HasMaxLength(5000)
+                .HasColumnType("character varying(5000)");
+
+            b.Property<DateTime?>("AnsweredAt")
+                .HasColumnType("timestamp with time zone");
+
+            b.Property<Guid?>("AnsweredById")
+                .HasColumnType("uuid");
+
+            b.Property<DateTime?>("ArchivedAt")
+                .HasColumnType("timestamp with time zone");
+
+            b.Property<DateTime>("CreatedOn")
+                .HasColumnType("timestamp with time zone");
+
+            b.Property<string>("Email")
+                .IsRequired()
+                .HasMaxLength(320)
+                .HasColumnType("character varying(320)");
+
+            b.Property<bool>("IsDeleted")
+                .HasColumnType("boolean");
+
+            b.Property<string>("Message")
+                .IsRequired()
+                .HasMaxLength(5000)
+                .HasColumnType("character varying(5000)");
+
+            b.Property<DateTime>("ModifiedOn")
+                .HasColumnType("timestamp with time zone");
+
+            b.Property<string>("Name")
+                .IsRequired()
+                .HasMaxLength(120)
+                .HasColumnType("character varying(120)");
+
+            b.Property<string>("Phone")
+                .HasMaxLength(50)
+                .HasColumnType("character varying(50)");
+
+            b.Property<DateTime?>("ReadAt")
+                .HasColumnType("timestamp with time zone");
+
+            b.Property<int>("Status")
+                .HasColumnType("integer");
+
+            b.Property<string>("Subject")
+                .IsRequired()
+                .HasMaxLength(250)
+                .HasColumnType("character varying(250)");
+
+            b.HasKey("Id");
+
+            b.HasIndex("AnsweredById");
+
+            b.HasIndex("Email");
+
+            b.HasIndex("Status", "CreatedOn");
+
+            b.ToTable("ContactInquiries");
+        });
+
         modelBuilder.Entity("Orisia.Server.Data.Entities.Dance", b =>
         {
             b.Property<Guid>("Id")
@@ -495,6 +564,16 @@ partial class ApplicationDbContextModelSnapshot : ModelSnapshot
             b.HasKey("Id");
 
             b.ToTable("Users");
+        });
+
+        modelBuilder.Entity("Orisia.Server.Data.Entities.ContactInquiry", b =>
+        {
+            b.HasOne("Orisia.Server.Data.Entities.User", "AnsweredBy")
+                .WithMany()
+                .HasForeignKey("AnsweredById")
+                .OnDelete(DeleteBehavior.SetNull);
+
+            b.Navigation("AnsweredBy");
         });
 
         modelBuilder.Entity("Orisia.Server.Data.Entities.Dance", b =>

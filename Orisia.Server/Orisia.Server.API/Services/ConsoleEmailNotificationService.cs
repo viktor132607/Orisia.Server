@@ -16,4 +16,25 @@ public class ConsoleEmailNotificationService(
 
         return Task.CompletedTask;
     }
+
+    public Task SendContactInquiryReceivedAsync(ContactInquiry inquiry)
+    {
+        logger.LogInformation(
+            "New contact inquiry {InquiryId} received from {Email} with subject {Subject}.",
+            inquiry.Id,
+            inquiry.Email,
+            inquiry.Subject);
+
+        return Task.CompletedTask;
+    }
+
+    public Task SendContactInquiryAnswerAsync(ContactInquiry inquiry)
+    {
+        logger.LogInformation(
+            "Contact inquiry {InquiryId} answer notification prepared for {Email}.",
+            inquiry.Id,
+            inquiry.Email);
+
+        return Task.CompletedTask;
+    }
 }

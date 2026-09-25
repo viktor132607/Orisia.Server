@@ -13,6 +13,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<GalleryMedia> GalleryMedia => Set<GalleryMedia>();
     public DbSet<SiteReview> SiteReviews => Set<SiteReview>();
     public DbSet<Dance> Dances => Set<Dance>();
+    public DbSet<ContactInquiry> ContactInquiries => Set<ContactInquiry>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
