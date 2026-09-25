@@ -5,6 +5,7 @@ using Orisia.Server.Common.Requests.Gallery;
 using Orisia.Server.Common.Responses.Gallery;
 using Orisia.Server.Core.Exceptions;
 using Orisia.Server.Data.Entities;
+using DataMedia = Orisia.Server.Data.Entities.Media;
 using Orisia.Server.Data.Interfaces;
 using Orisia.Server.Domain.Interfaces;
 
@@ -156,7 +157,7 @@ public class GalleryService(
 
         foreach (GalleryMediaInput input in request.Items)
         {
-            Media? media = await mediaRepository.GetWithUploaderAsync(input.MediaId);
+            DataMedia? media = await mediaRepository.GetWithUploaderAsync(input.MediaId);
             if (media is null)
             {
                 throw new AppException($"Media {input.MediaId} not found.").SetStatusCode(404);
@@ -359,7 +360,7 @@ public class GalleryService(
 
     private GalleryMediaResponse MapMedia(GalleryMedia item)
     {
-        Media media = item.Media
+        DataMedia media = item.Media
             ?? throw new InvalidOperationException("Gallery media relation was not loaded.");
 
         return new GalleryMediaResponse

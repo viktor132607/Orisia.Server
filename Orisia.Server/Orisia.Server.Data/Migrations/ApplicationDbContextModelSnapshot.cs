@@ -321,6 +321,60 @@ partial class ApplicationDbContextModelSnapshot : ModelSnapshot
             b.ToTable("Posts");
         });
 
+        modelBuilder.Entity("Orisia.Server.Data.Entities.SiteReview", b =>
+        {
+            b.Property<Guid>("Id")
+                .ValueGeneratedOnAdd()
+                .HasColumnType("uuid");
+
+            b.Property<string>("AuthorName")
+                .IsRequired()
+                .HasMaxLength(120)
+                .HasColumnType("character varying(120)");
+
+            b.Property<string>("Content")
+                .IsRequired()
+                .HasMaxLength(2000)
+                .HasColumnType("character varying(2000)");
+
+            b.Property<DateTime>("CreatedOn")
+                .HasColumnType("timestamp with time zone");
+
+            b.Property<bool>("Featured")
+                .HasColumnType("boolean");
+
+            b.Property<bool>("IsDeleted")
+                .HasColumnType("boolean");
+
+            b.Property<DateTime?>("ModeratedAt")
+                .HasColumnType("timestamp with time zone");
+
+            b.Property<Guid?>("ModeratedById")
+                .HasColumnType("uuid");
+
+            b.Property<DateTime>("ModifiedOn")
+                .HasColumnType("timestamp with time zone");
+
+            b.Property<int>("Rating")
+                .HasColumnType("integer");
+
+            b.Property<int>("Status")
+                .HasColumnType("integer");
+
+            b.Property<Guid?>("UserId")
+                .HasColumnType("uuid");
+
+            b.HasKey("Id");
+
+            b.HasIndex("ModeratedById");
+
+            b.HasIndex("Status", "Featured", "CreatedOn");
+
+            b.HasIndex("UserId");
+
+            b.ToTable("SiteReviews");
+        });
+
         modelBuilder.Entity("Orisia.Server.Data.Entities.User", b =>
         {
             b.Property<Guid>("Id")
@@ -431,6 +485,22 @@ partial class ApplicationDbContextModelSnapshot : ModelSnapshot
             b.Navigation("CoverMedia");
         });
 
+        modelBuilder.Entity("Orisia.Server.Data.Entities.SiteReview", b =>
+        {
+            b.HasOne("Orisia.Server.Data.Entities.User", "ModeratedBy")
+                .WithMany()
+                .HasForeignKey("ModeratedById")
+                .OnDelete(DeleteBehavior.SetNull);
+
+            b.HasOne("Orisia.Server.Data.Entities.User", "User")
+                .WithMany("SiteReviews")
+                .HasForeignKey("UserId")
+                .OnDelete(DeleteBehavior.SetNull);
+
+            b.Navigation("ModeratedBy");
+            b.Navigation("User");
+        });
+
         modelBuilder.Entity("Orisia.Server.Data.Entities.GalleryAlbum", b =>
         {
             b.Navigation("Items");
@@ -441,6 +511,8 @@ partial class ApplicationDbContextModelSnapshot : ModelSnapshot
             b.Navigation("MediaUploads");
 
             b.Navigation("Posts");
+
+            b.Navigation("SiteReviews");
         });
 #pragma warning restore 612, 618
     }

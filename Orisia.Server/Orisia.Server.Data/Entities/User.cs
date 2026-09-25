@@ -12,4 +12,5 @@ public class User : GenericEntity
 
     public ICollection<Post> Posts { get; set; } = new List<Post>();
     public ICollection<Media> MediaUploads { get; set; } = new List<Media>();
+    public ICollection<SiteReview> SiteReviews { get; set; } = new List<SiteReview>();
 }
