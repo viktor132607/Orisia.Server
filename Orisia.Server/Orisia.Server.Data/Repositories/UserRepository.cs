@@ -2,14 +2,26 @@ using Microsoft.EntityFrameworkCore;
 using Orisia.Server.Data.Entities;
 using Orisia.Server.Data.Interfaces;
 
-namespace Orisia.Server.Data.Repositories
+namespace Orisia.Server.Data.Repositories;
+
+public class UserRepository(ApplicationDbContext context) : Repository<User>(context), IUserRepository
 {
-    public class UserRepository(ApplicationDbContext context) : Repository<User>(context), IUserRepository
+    public Task<bool> IsEmailAlreadyUsed(string email)
     {
-        private readonly ApplicationDbContext _context = context;
-        public async Task<bool> IsEmailAlreadyUsed(string email)
-        {
-            return await _context.Users.AnyAsync(u => u.Email == email && u.IsDeleted == false);
-        }
+        string normalized = email.Trim().ToLowerInvariant();
+
+        return Context.Users.AnyAsync(user =>
+            user.Email == normalized
+            && !user.IsDeleted);
+    }
+
+    public Task<bool> IsEmailAlreadyUsedByOtherUser(string email, Guid userId)
+    {
+        string normalized = email.Trim().ToLowerInvariant();
+
+        return Context.Users.AnyAsync(user =>
+            user.Id != userId
+            && user.Email == normalized
+            && !user.IsDeleted);
     }
 }

@@ -53,6 +53,24 @@ public class UsersController(IUserService userService, IAuthService authService)
         return await ControllerProcessor.ProcessAsync(() => userService.SetRoleAsync(request), this, true);
     }
 
+    [HttpPost("{id:guid}/deactivate")]
+    public async Task<IActionResult> DeactivateAsync(Guid id)
+    {
+        return await ControllerProcessor.ProcessAsync(
+            () => userService.DeactivateAsync(id),
+            this,
+            true);
+    }
+
+    [HttpPost("{id:guid}/activate")]
+    public async Task<IActionResult> ActivateAsync(Guid id)
+    {
+        return await ControllerProcessor.ProcessAsync(
+            () => userService.ActivateAsync(id),
+            this,
+            true);
+    }
+
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> DeleteAsync(Guid id)
     {

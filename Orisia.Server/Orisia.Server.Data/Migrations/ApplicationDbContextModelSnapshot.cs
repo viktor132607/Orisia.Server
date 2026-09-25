@@ -552,6 +552,12 @@ partial class ApplicationDbContextModelSnapshot : ModelSnapshot
                 .IsRequired()
                 .HasColumnType("text");
 
+            b.Property<DateTime?>("DeactivatedAt")
+                .HasColumnType("timestamp with time zone");
+
+            b.Property<bool>("IsActive")
+                .HasColumnType("boolean");
+
             b.Property<string>("RefreshToken")
                 .HasColumnType("text");
 
@@ -562,6 +568,12 @@ partial class ApplicationDbContextModelSnapshot : ModelSnapshot
                 .HasColumnType("text");
 
             b.HasKey("Id");
+
+            b.HasIndex("Email")
+                .IsUnique()
+                .HasFilter("\"IsDeleted\" = false");
+
+            b.HasIndex("IsActive", "Role");
 
             b.ToTable("Users");
         });

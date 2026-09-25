@@ -9,6 +9,8 @@ public class User : GenericEntity
     public string? Role { get; set; }
     public string? RefreshToken { get; set; }
     public DateTime? RefreshTokenExpiryTime { get; set; }
+    public bool IsActive { get; set; } = true;
+    public DateTime? DeactivatedAt { get; set; }
 
     public ICollection<Post> Posts { get; set; } = new List<Post>();
     public ICollection<Media> MediaUploads { get; set; } = new List<Media>();

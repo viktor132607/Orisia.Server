@@ -1,9 +1,9 @@
 using Orisia.Server.Data.Entities;
 
-namespace Orisia.Server.Data.Interfaces
+namespace Orisia.Server.Data.Interfaces;
+
+public interface IUserRepository : IRepository<User>
 {
-    public interface IUserRepository : IRepository<User>
-    {
-        Task<bool> IsEmailAlreadyUsed(string email);
-    }
+    Task<bool> IsEmailAlreadyUsed(string email);
+    Task<bool> IsEmailAlreadyUsedByOtherUser(string email, Guid userId);
 }

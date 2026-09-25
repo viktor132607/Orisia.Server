@@ -110,6 +110,8 @@ public class UserServiceTests
         existing.RefreshToken = "refresh";
 
         _userRepository.Setup(x => x.GetByIdAsync(userId)).ReturnsAsync(existing);
+        _userRepository.Setup(x => x.IsEmailAlreadyUsedByOtherUser("new@example.com", userId))
+            .ReturnsAsync(false);
         _userRepository.Setup(x => x.UpdateAsync(It.IsAny<User>()))
             .ReturnsAsync((User user) => user);
 
@@ -123,6 +125,64 @@ public class UserServiceTests
 
         Assert.NotNull(result);
         Assert.Equal(Roles.Editor, result.Role);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_ShouldRejectEmailUsedByAnotherUser()
+    {
+        Guid id = Guid.NewGuid();
+        User existing = CreateUser("old@example.com", Roles.User, id);
+
+        _userRepository.Setup(x => x.GetByIdAsync(id)).ReturnsAsync(existing);
+        _userRepository.Setup(x => x.IsEmailAlreadyUsedByOtherUser("taken@example.com", id))
+            .ReturnsAsync(true);
+
+        await Assert.ThrowsAsync<AppException>(() => _service.UpdateAsync(new UpdateUserRequest
+        {
+            Id = id,
+            Email = " Taken@Example.com ",
+            Names = "User",
+            Phone = "123"
+        }));
+    }
+
+    [Fact]
+    public async Task DeactivateAsync_ShouldRevokeRefreshToken()
+    {
+        Guid adminId = Guid.NewGuid();
+        Guid id = Guid.NewGuid();
+        User existing = CreateUser("user@example.com", Roles.User, id);
+        existing.RefreshToken = "refresh";
+
+        _authService.Setup(x => x.GetCurrentUserId()).ReturnsAsync(adminId.ToString());
+        _userRepository.Setup(x => x.GetByIdAsync(id)).ReturnsAsync(existing);
+        _userRepository.Setup(x => x.UpdateAsync(It.IsAny<User>()))
+            .ReturnsAsync((User value) => value);
+
+        UserResponse result = await _service.DeactivateAsync(id);
+
+        Assert.False(result.IsActive);
+        Assert.NotNull(result.DeactivatedAt);
+        _userRepository.Verify(x => x.UpdateAsync(It.Is<User>(
+            value => value.RefreshToken == null && !value.IsActive)), Times.Once);
+    }
+
+    [Fact]
+    public async Task ActivateAsync_ShouldClearDeactivationTimestamp()
+    {
+        Guid id = Guid.NewGuid();
+        User existing = CreateUser("user@example.com", Roles.User, id);
+        existing.IsActive = false;
+        existing.DeactivatedAt = DateTime.UtcNow;
+
+        _userRepository.Setup(x => x.GetByIdAsync(id)).ReturnsAsync(existing);
+        _userRepository.Setup(x => x.UpdateAsync(It.IsAny<User>()))
+            .ReturnsAsync((User value) => value);
+
+        UserResponse result = await _service.ActivateAsync(id);
+
+        Assert.True(result.IsActive);
+        Assert.Null(result.DeactivatedAt);
     }
 
     private static User CreateUser(string email, string role, Guid? id = null)

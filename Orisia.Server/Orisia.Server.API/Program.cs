@@ -57,6 +57,31 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
         options.TokenValidationParameters = JwtSecurityConfiguration.CreateTokenValidationParameters(jwtOptions);
+        options.Events = new JwtBearerEvents
+        {
+            OnTokenValidated = async context =>
+            {
+                string? userIdValue = context.Principal?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                if (!Guid.TryParse(userIdValue, out Guid userId))
+                {
+                    context.Fail("Invalid user identifier.");
+                    return;
+                }
+
+                ApplicationDbContext db = context.HttpContext.RequestServices
+                    .GetRequiredService<ApplicationDbContext>();
+
+                bool active = await db.Users.AnyAsync(user =>
+                    user.Id == userId
+                    && !user.IsDeleted
+                    && user.IsActive);
+
+                if (!active)
+                {
+                    context.Fail("User account is inactive.");
+                }
+            }
+        };
     });
 
 builder.Services.AddAuthorization(options =>

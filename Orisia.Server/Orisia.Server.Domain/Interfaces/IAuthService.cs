@@ -10,6 +10,8 @@ public interface IAuthService
     Task<TokenResponse?> RefreshTokensAsync(RefreshTokenRequest request);
     Task<ForgotPasswordResponse> ForgotPasswordAsync(ForgotPasswordRequest request);
     Task<bool> ResetPasswordAsync(ResetPasswordRequest request);
+    Task<bool> ChangePasswordAsync(ChangePasswordRequest request);
+    Task<bool> DeactivateCurrentAccountAsync(DeactivateAccountRequest request);
     Task<string?> GetCurrentUserRole();
     Task<string?> GetCurrentUserEmail();
     Task<string?> GetCurrentUserId();

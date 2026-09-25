@@ -48,31 +48,30 @@ public class UserService(IUserRepository userRepository, IAuthService authServic
 
     public async Task<UserResponse?> UpdateAsync(UpdateUserRequest request)
     {
-        User? userBeforeUpdate = await userRepository.GetByIdAsync(request.Id);
-        if (userBeforeUpdate is null)
+        User? existing = await userRepository.GetByIdAsync(request.Id);
+        if (existing is null)
         {
             throw new AppException("User not found.").SetStatusCode(404);
         }
 
-        User updatedUserPayload = new()
+        string email = NormalizeEmail(request.Email);
+        if (await userRepository.IsEmailAlreadyUsedByOtherUser(email, request.Id))
         {
-            Id = request.Id,
-            Email = request.Email,
-            Names = request.Names,
-            Phone = request.Phone,
-            PasswordHash = userBeforeUpdate.PasswordHash,
-            Role = userBeforeUpdate.Role,
-            RefreshToken = userBeforeUpdate.RefreshToken,
-            RefreshTokenExpiryTime = userBeforeUpdate.RefreshTokenExpiryTime
-        };
+            throw new AppException("Email is already in use.").SetStatusCode(409);
+        }
 
-        User? updatedUser = await userRepository.UpdateAsync(updatedUserPayload);
-        if (updatedUser is null)
+        User payload = Clone(existing);
+        payload.Email = email;
+        payload.Names = request.Names.Trim();
+        payload.Phone = request.Phone.Trim();
+
+        User? updated = await userRepository.UpdateAsync(payload);
+        if (updated is null)
         {
             throw new AppException("User not found.").SetStatusCode(404);
         }
 
-        return MapUser(updatedUser);
+        return MapUser(updated);
     }
 
     public async Task<bool> DeleteAsync(Guid id)
@@ -94,7 +93,8 @@ public class UserService(IUserRepository userRepository, IAuthService authServic
 
         if (!Roles.IsValid(role))
         {
-            throw new AppException($"Invalid role. Allowed roles: {Roles.Admin}, {Roles.Editor}, {Roles.User}.")
+            throw new AppException(
+                $"Invalid role. Allowed roles: {Roles.Admin}, {Roles.Editor}, {Roles.User}.")
                 .SetStatusCode(400);
         }
 
@@ -111,36 +111,103 @@ public class UserService(IUserRepository userRepository, IAuthService authServic
             throw new AppException("User not found.").SetStatusCode(404);
         }
 
-        User updatedUserPayload = new()
+        User payload = Clone(user);
+        payload.Role = role;
+
+        User? updated = await userRepository.UpdateAsync(payload);
+        if (updated is null)
+        {
+            throw new AppException("User not found.").SetStatusCode(404);
+        }
+
+        return MapUser(updated);
+    }
+
+    public async Task<UserResponse> DeactivateAsync(Guid id)
+    {
+        Guid currentUserId = await GetCurrentUserIdAsync();
+        if (currentUserId == id)
+        {
+            throw new AppException(
+                "You cannot deactivate your own account from the admin users endpoint.")
+                .SetStatusCode(409);
+        }
+
+        User? user = await userRepository.GetByIdAsync(id);
+        if (user is null)
+        {
+            throw new AppException("User not found.").SetStatusCode(404);
+        }
+
+        if (!user.IsActive)
+        {
+            return MapUser(user);
+        }
+
+        User payload = Clone(user);
+        payload.IsActive = false;
+        payload.DeactivatedAt = DateTime.UtcNow;
+        payload.RefreshToken = null;
+        payload.RefreshTokenExpiryTime = null;
+
+        User? updated = await userRepository.UpdateAsync(payload)
+            ?? throw new AppException("User not found.").SetStatusCode(404);
+
+        return MapUser(updated);
+    }
+
+    public async Task<UserResponse> ActivateAsync(Guid id)
+    {
+        User? user = await userRepository.GetByIdAsync(id);
+        if (user is null)
+        {
+            throw new AppException("User not found.").SetStatusCode(404);
+        }
+
+        if (user.IsActive)
+        {
+            return MapUser(user);
+        }
+
+        User payload = Clone(user);
+        payload.IsActive = true;
+        payload.DeactivatedAt = null;
+        payload.RefreshToken = null;
+        payload.RefreshTokenExpiryTime = null;
+
+        User? updated = await userRepository.UpdateAsync(payload)
+            ?? throw new AppException("User not found.").SetStatusCode(404);
+
+        return MapUser(updated);
+    }
+
+    private async Task<Guid> GetCurrentUserIdAsync()
+    {
+        string? currentUserId = await authService.GetCurrentUserId();
+        if (string.IsNullOrWhiteSpace(currentUserId)
+            || !Guid.TryParse(currentUserId, out Guid userId))
+        {
+            throw new AppException("Unauthorized").SetStatusCode(401);
+        }
+
+        return userId;
+    }
+
+    private static User Clone(User user)
+    {
+        return new User
         {
             Id = user.Id,
             Email = user.Email,
             Names = user.Names,
             Phone = user.Phone,
             PasswordHash = user.PasswordHash,
-            Role = role,
+            Role = user.Role,
             RefreshToken = user.RefreshToken,
-            RefreshTokenExpiryTime = user.RefreshTokenExpiryTime
+            RefreshTokenExpiryTime = user.RefreshTokenExpiryTime,
+            IsActive = user.IsActive,
+            DeactivatedAt = user.DeactivatedAt
         };
-
-        User? updatedUser = await userRepository.UpdateAsync(updatedUserPayload);
-        if (updatedUser is null)
-        {
-            throw new AppException("User not found.").SetStatusCode(404);
-        }
-
-        return MapUser(updatedUser);
-    }
-
-    private async Task<Guid> GetCurrentUserIdAsync()
-    {
-        string? currentUserId = await authService.GetCurrentUserId();
-        if (string.IsNullOrWhiteSpace(currentUserId) || !Guid.TryParse(currentUserId, out Guid userId))
-        {
-            throw new AppException("Unauthorized").SetStatusCode(401);
-        }
-
-        return userId;
     }
 
     private static UserResponse MapUser(User user)
@@ -151,7 +218,14 @@ public class UserService(IUserRepository userRepository, IAuthService authServic
             Email = user.Email,
             Names = user.Names,
             Phone = user.Phone,
-            Role = user.Role ?? Roles.User
+            Role = user.Role ?? Roles.User,
+            IsActive = user.IsActive,
+            DeactivatedAt = user.DeactivatedAt
         };
+    }
+
+    private static string NormalizeEmail(string email)
+    {
+        return email.Trim().ToLowerInvariant();
     }
 }

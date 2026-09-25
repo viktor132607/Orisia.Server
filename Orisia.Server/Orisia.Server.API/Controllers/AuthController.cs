@@ -48,6 +48,24 @@ public class AuthController(IAuthService authService, IUserService userService) 
     }
 
     [Authorize]
+    [HttpPost("change-password")]
+    public async Task<IActionResult> ChangePassword(ChangePasswordRequest request)
+    {
+        return await authService.ChangePasswordAsync(request)
+            ? NoContent()
+            : BadRequest();
+    }
+
+    [Authorize]
+    [HttpPost("me/deactivate")]
+    public async Task<IActionResult> DeactivateCurrentAccount(DeactivateAccountRequest request)
+    {
+        return await authService.DeactivateCurrentAccountAsync(request)
+            ? NoContent()
+            : BadRequest();
+    }
+
+    [Authorize]
     [HttpDelete("logout")]
     public async Task<ActionResult<TokenResponse>> Logout()
     {

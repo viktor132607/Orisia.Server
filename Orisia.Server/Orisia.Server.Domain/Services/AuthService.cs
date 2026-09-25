@@ -35,18 +35,21 @@ public class AuthService(
 
     public async Task<RegisterUserResponse?> RegisterAsync(RegisterUserRequest request)
     {
-        if (await userRepository.IsEmailAlreadyUsed(request.Email))
+        string email = request.Email.Trim().ToLowerInvariant();
+
+        if (await userRepository.IsEmailAlreadyUsed(email))
         {
             throw new AppException("Email is already in use.").SetStatusCode(409);
         }
 
         User user = new()
         {
-            Email = request.Email,
+            Email = email,
             PasswordHash = "temporaryPasswordHash",
-            Names = request.Names,
-            Phone = request.Phone,
-            Role = Roles.User
+            Names = request.Names.Trim(),
+            Phone = request.Phone.Trim(),
+            Role = Roles.User,
+            IsActive = true
         };
 
         string hashedPassword = new PasswordHasher<User>()
@@ -65,7 +68,9 @@ public class AuthService(
 
     public async Task<TokenResponse?> LoginAsync(LoginUserRequest request)
     {
-        User? user = await context.Users.FirstOrDefaultAsync(u => u.Email == request.Email && !u.IsDeleted);
+        string email = request.Email.Trim().ToLowerInvariant();
+        User? user = await context.Users.FirstOrDefaultAsync(
+            u => u.Email == email && !u.IsDeleted && u.IsActive);
         if (user is null)
         {
             return null;
@@ -93,7 +98,9 @@ public class AuthService(
 
     public async Task<ForgotPasswordResponse> ForgotPasswordAsync(ForgotPasswordRequest request)
     {
-        User? user = await context.Users.FirstOrDefaultAsync(u => u.Email == request.Email && !u.IsDeleted);
+        string email = request.Email.Trim().ToLowerInvariant();
+        User? user = await context.Users.FirstOrDefaultAsync(
+            u => u.Email == email && !u.IsDeleted && u.IsActive);
 
         ForgotPasswordResponse response = new()
         {
@@ -127,7 +134,8 @@ public class AuthService(
             throw new AppException("The password reset link is invalid or expired.").SetStatusCode(400);
         }
 
-        User? user = await context.Users.FirstOrDefaultAsync(u => u.Id == userId.Value && !u.IsDeleted);
+        User? user = await context.Users.FirstOrDefaultAsync(
+            u => u.Id == userId.Value && !u.IsDeleted && u.IsActive);
         if (user is null)
         {
             throw new AppException("User not found.").SetStatusCode(404);
@@ -143,9 +151,86 @@ public class AuthService(
         return true;
     }
 
+    public async Task<bool> ChangePasswordAsync(ChangePasswordRequest request)
+    {
+        Guid currentUserId = await GetRequiredCurrentUserIdAsync();
+        User? user = await context.Users.FirstOrDefaultAsync(
+            u => u.Id == currentUserId && !u.IsDeleted && u.IsActive);
+
+        if (user is null)
+        {
+            throw new AppException("User not found.").SetStatusCode(404);
+        }
+
+        PasswordHasher<User> hasher = new();
+        PasswordVerificationResult currentPasswordResult =
+            hasher.VerifyHashedPassword(user, user.PasswordHash, request.CurrentPassword);
+
+        if (currentPasswordResult == PasswordVerificationResult.Failed)
+        {
+            throw new AppException("Current password is incorrect.").SetStatusCode(400);
+        }
+
+        PasswordVerificationResult samePasswordResult =
+            hasher.VerifyHashedPassword(user, user.PasswordHash, request.NewPassword);
+
+        if (samePasswordResult != PasswordVerificationResult.Failed)
+        {
+            throw new AppException("New password must be different from the current password.")
+                .SetStatusCode(400);
+        }
+
+        user.PasswordHash = hasher.HashPassword(user, request.NewPassword);
+        user.RefreshToken = null;
+        user.RefreshTokenExpiryTime = null;
+        user.ModifiedOn = DateTime.UtcNow;
+
+        await context.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<bool> DeactivateCurrentAccountAsync(DeactivateAccountRequest request)
+    {
+        Guid currentUserId = await GetRequiredCurrentUserIdAsync();
+        User? user = await context.Users.FirstOrDefaultAsync(
+            u => u.Id == currentUserId && !u.IsDeleted && u.IsActive);
+
+        if (user is null)
+        {
+            throw new AppException("User not found.").SetStatusCode(404);
+        }
+
+        if (user.Role == Roles.Admin)
+        {
+            throw new AppException(
+                "Administrator accounts must be deactivated by another administrator.")
+                .SetStatusCode(409);
+        }
+
+        PasswordVerificationResult verification =
+            new PasswordHasher<User>().VerifyHashedPassword(
+                user,
+                user.PasswordHash,
+                request.CurrentPassword);
+
+        if (verification == PasswordVerificationResult.Failed)
+        {
+            throw new AppException("Current password is incorrect.").SetStatusCode(400);
+        }
+
+        user.IsActive = false;
+        user.DeactivatedAt = DateTime.UtcNow;
+        user.RefreshToken = null;
+        user.RefreshTokenExpiryTime = null;
+        user.ModifiedOn = DateTime.UtcNow;
+
+        await context.SaveChangesAsync();
+        return true;
+    }
+
     public async Task<bool> LogoutAsync()
     {
-        Guid currentUserId = Guid.Parse((await GetCurrentUserId())!);
+        Guid currentUserId = await GetRequiredCurrentUserIdAsync();
         User? user = await context.Users.FirstOrDefaultAsync(u => u.Id == currentUserId && !u.IsDeleted);
 
         if (user == null)
@@ -162,7 +247,8 @@ public class AuthService(
 
     private async Task<User?> ValidateRefreshTokenAsync(Guid userId, string refreshToken)
     {
-        User? user = await context.Users.FirstOrDefaultAsync(u => u.Id == userId && !u.IsDeleted);
+        User? user = await context.Users.FirstOrDefaultAsync(
+            u => u.Id == userId && !u.IsDeleted && u.IsActive);
         if (user is null || user.RefreshToken != refreshToken || user.RefreshTokenExpiryTime <= DateTime.UtcNow)
         {
             return null;
@@ -237,6 +323,17 @@ public class AuthService(
     public Task<string?> GetCurrentUserRole()
     {
         return GetClaimValue(ClaimTypes.Role);
+    }
+
+    private async Task<Guid> GetRequiredCurrentUserIdAsync()
+    {
+        string? raw = await GetCurrentUserId();
+        if (!Guid.TryParse(raw, out Guid userId))
+        {
+            throw new AppException("Unauthorized.").SetStatusCode(401);
+        }
+
+        return userId;
     }
 
     private Task<string?> GetClaimValue(string claimType)

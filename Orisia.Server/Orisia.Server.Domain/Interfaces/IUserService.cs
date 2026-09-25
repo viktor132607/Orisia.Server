@@ -12,4 +12,6 @@ public interface IUserService
     Task<UserResponse?> UpdateAsync(UpdateUserRequest request);
     Task<bool> DeleteAsync(Guid id);
     Task<UserResponse> SetRoleAsync(RoleChangeRequest request);
+    Task<UserResponse> DeactivateAsync(Guid id);
+    Task<UserResponse> ActivateAsync(Guid id);
 }

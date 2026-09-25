@@ -4,15 +4,15 @@ namespace Orisia.Server.Common.Requests.Auth;
 
 public class RegisterUserRequest
 {
-    [Required]
-    public required string Email { get; set; } 
-    
-    [Required]
-    public required string Password { get; set; } 
-    
-    [Required]
-    public required string Names { get; set; } 
-    
-    [Required]
-    public required string Phone { get; set; } 
+    [Required, EmailAddress, MaxLength(320)]
+    public required string Email { get; set; }
+
+    [Required, MinLength(8), MaxLength(200)]
+    public required string Password { get; set; }
+
+    [Required, MinLength(2), MaxLength(120)]
+    public required string Names { get; set; }
+
+    [Required, MaxLength(50)]
+    public required string Phone { get; set; }
 }

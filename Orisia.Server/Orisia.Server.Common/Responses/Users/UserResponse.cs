@@ -1,11 +1,12 @@
 namespace Orisia.Server.Common.Responses.Users;
 
-public class UserResponse 
+public class UserResponse
 {
     public required Guid Id { get; set; }
-    public required string Email { get; set; } 
+    public required string Email { get; set; }
     public required string Names { get; set; }
     public required string Phone { get; set; }
     public string? Role { get; set; }
-
+    public bool IsActive { get; set; }
+    public DateTime? DeactivatedAt { get; set; }
 }

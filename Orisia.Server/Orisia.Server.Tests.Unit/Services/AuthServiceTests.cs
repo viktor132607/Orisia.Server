@@ -177,6 +177,112 @@ public class AuthServiceTests
     }
 
     [Fact]
+    public async Task LoginAsync_ShouldReturnNull_WhenAccountIsInactive()
+    {
+        User user = new()
+        {
+            Email = "inactive@example.com",
+            Names = "Inactive User",
+            Phone = "123",
+            Role = Roles.User,
+            IsActive = false,
+            PasswordHash = "temporary"
+        };
+
+        user.PasswordHash = new PasswordHasher<User>().HashPassword(user, "password123");
+        _context.Users.Add(user);
+        await _context.SaveChangesAsync();
+
+        TokenResponse? response = await _authService.LoginAsync(new LoginUserRequest
+        {
+            Email = "INACTIVE@EXAMPLE.COM",
+            Password = "password123"
+        });
+
+        Assert.Null(response);
+    }
+
+    [Fact]
+    public async Task ChangePasswordAsync_ShouldRevokeRefreshToken()
+    {
+        User user = new()
+        {
+            Email = "change@example.com",
+            Names = "Change User",
+            Phone = "123",
+            Role = Roles.User,
+            RefreshToken = "refresh",
+            RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(1),
+            PasswordHash = "temporary"
+        };
+
+        user.PasswordHash = new PasswordHasher<User>().HashPassword(user, "oldpassword");
+        _context.Users.Add(user);
+        await _context.SaveChangesAsync();
+
+        DefaultHttpContext httpContext = new();
+        httpContext.User = new ClaimsPrincipal(new ClaimsIdentity(
+        [
+            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString())
+        ], "Test"));
+
+        _httpContextAccessorMock.Setup(x => x.HttpContext).Returns(httpContext);
+
+        bool result = await _authService.ChangePasswordAsync(new ChangePasswordRequest
+        {
+            CurrentPassword = "oldpassword",
+            NewPassword = "newpassword123"
+        });
+
+        Assert.True(result);
+        Assert.Null(user.RefreshToken);
+        Assert.Null(user.RefreshTokenExpiryTime);
+
+        PasswordVerificationResult verification =
+            new PasswordHasher<User>().VerifyHashedPassword(
+                user,
+                user.PasswordHash,
+                "newpassword123");
+
+        Assert.NotEqual(PasswordVerificationResult.Failed, verification);
+    }
+
+    [Fact]
+    public async Task DeactivateCurrentAccountAsync_ShouldDeactivateNonAdminAndRevokeRefresh()
+    {
+        User user = new()
+        {
+            Email = "deactivate@example.com",
+            Names = "Deactivate User",
+            Phone = "123",
+            Role = Roles.User,
+            RefreshToken = "refresh",
+            RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(1),
+            PasswordHash = "temporary"
+        };
+
+        user.PasswordHash = new PasswordHasher<User>().HashPassword(user, "password123");
+        _context.Users.Add(user);
+        await _context.SaveChangesAsync();
+
+        DefaultHttpContext httpContext = new();
+        httpContext.User = new ClaimsPrincipal(new ClaimsIdentity(
+        [
+            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString())
+        ], "Test"));
+
+        _httpContextAccessorMock.Setup(x => x.HttpContext).Returns(httpContext);
+
+        bool result = await _authService.DeactivateCurrentAccountAsync(
+            new DeactivateAccountRequest { CurrentPassword = "password123" });
+
+        Assert.True(result);
+        Assert.False(user.IsActive);
+        Assert.NotNull(user.DeactivatedAt);
+        Assert.Null(user.RefreshToken);
+    }
+
+    [Fact]
     public async Task RefreshTokensAsync_ShouldReturnNull_WhenUserNotFound()
     {
         RefreshTokenRequest request = new() { UserId = Guid.NewGuid(), RefreshToken = "invalidRefreshToken" };

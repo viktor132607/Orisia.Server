@@ -4,12 +4,12 @@ namespace Orisia.Server.Common.Requests.Users;
 
 public class UpdateCurrentUserRequest
 {
-    [Required]
+    [Required, EmailAddress, MaxLength(320)]
     public required string Email { get; set; }
 
-    [Required]
+    [Required, MinLength(2), MaxLength(120)]
     public required string Names { get; set; }
 
-    [Required]
+    [Required, MaxLength(50)]
     public required string Phone { get; set; }
 }
