@@ -1,8 +1,5 @@
 using Microsoft.EntityFrameworkCore;
 using Orisia.Server.Common.Responses.Gdpr;
-using Orisia.Server.Common.Responses.Order;
-using Orisia.Server.Common.Responses.OrderItem;
-using Orisia.Server.Common.Responses.Review;
 using Orisia.Server.Common.Responses.Users;
 using Orisia.Server.Core.Exceptions;
 using Orisia.Server.Data;
@@ -21,29 +18,14 @@ public class GdprService(
     {
         Guid userId = await GetCurrentUserIdAsync();
 
-        User? user = await context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId && !u.IsDeleted);
-        if (user == null)
+        User? user = await context.Users
+            .AsNoTracking()
+            .FirstOrDefaultAsync(item => item.Id == userId && !item.IsDeleted);
+
+        if (user is null)
         {
             throw new AppException("User not found.").SetStatusCode(404);
         }
-
-        List<Order> orders = await context.Orders
-            .AsNoTracking()
-            .Include(x => x.Items)
-            .Where(x => x.UserId == userId && !x.IsDeleted)
-            .OrderByDescending(x => x.CreatedOn)
-            .ToListAsync();
-
-        List<WishlistItem> wishlistItems = await context.WishlistItems
-            .AsNoTracking()
-            .Where(x => x.UserId == userId && !x.IsDeleted)
-            .ToListAsync();
-
-        List<Review> reviews = await context.Reviews
-            .AsNoTracking()
-            .Where(x => x.UserId == userId && !x.IsDeleted)
-            .OrderByDescending(x => x.CreatedOn)
-            .ToListAsync();
 
         return new GdprExportResponse
         {
@@ -55,40 +37,7 @@ public class GdprService(
                 Names = user.Names,
                 Phone = user.Phone,
                 Role = user.Role
-            },
-            Orders = orders.Select(order => new OrderResponse
-            {
-                Id = order.Id,
-                UserId = order.UserId,
-                OrderTotalPrice = order.OrderTotalPrice,
-                Names = order.Names,
-                PostalCode = order.PostalCode,
-                Country = order.Country,
-                City = order.City,
-                Address = order.Address,
-                Phone = order.Phone,
-                Status = order.Status,
-                CreatedOn = order.CreatedOn,
-                Items = order.Items.Select(item => new OrderItemResponse
-                {
-                    ProductId = item.ProductId,
-                    SinglePrice = item.SinglePrice,
-                    TotalPrice = item.TotalPrice,
-                    Quantity = item.Quantity,
-                    Title = item.Title,
-                    PrimaryImageUri = item.PrimaryImageUri
-                }).ToList()
-            }).ToList(),
-            WishlistProductIds = wishlistItems.Select(item => item.ProductId).ToList(),
-            Reviews = reviews.Select(review => new ReviewResponse
-            {
-                Id = review.Id,
-                Content = review.Content,
-                Rating = review.Rating,
-                CreatedOn = review.CreatedOn,
-                UserId = review.UserId,
-                UserNames = user.Names
-            }).ToList()
+            }
         };
     }
 
@@ -96,51 +45,22 @@ public class GdprService(
     {
         Guid userId = await GetCurrentUserIdAsync();
 
-        User? user = await context.Users.FirstOrDefaultAsync(u => u.Id == userId && !u.IsDeleted);
-        if (user == null)
+        User? user = await context.Users
+            .FirstOrDefaultAsync(item => item.Id == userId && !item.IsDeleted);
+
+        if (user is null)
         {
             throw new AppException("User not found.").SetStatusCode(404);
         }
 
-        List<WishlistItem> wishlistItems = await context.WishlistItems
-            .Where(x => x.UserId == userId && !x.IsDeleted)
-            .ToListAsync();
-
-        foreach (WishlistItem wishlistItem in wishlistItems)
-        {
-            wishlistItem.IsDeleted = true;
-        }
-
-        List<Review> reviews = await context.Reviews
-            .Where(x => x.UserId == userId && !x.IsDeleted)
-            .ToListAsync();
-
-        foreach (Review review in reviews)
-        {
-            review.IsDeleted = true;
-        }
-
-        List<Order> orders = await context.Orders
-            .Where(x => x.UserId == userId && !x.IsDeleted)
-            .ToListAsync();
-
-        foreach (Order order in orders)
-        {
-            order.Names = "Deleted user";
-            order.PostalCode = null;
-            order.Country = null;
-            order.City = null;
-            order.Address = null;
-            order.Phone = null;
-        }
-
-        user.Email = $"deleted-{user.Id}@orisia.local";
+        user.Email = "deleted-" + user.Id + "@orisia.local";
         user.Names = "Deleted user";
         user.Phone = string.Empty;
         user.PasswordHash = string.Empty;
         user.RefreshToken = null;
         user.RefreshTokenExpiryTime = null;
         user.IsDeleted = true;
+        user.ModifiedOn = DateTime.UtcNow;
 
         await context.SaveChangesAsync();
 
@@ -154,14 +74,13 @@ public class GdprService(
     private async Task<Guid> GetCurrentUserIdAsync()
     {
         string? currentUserId = await authService.GetCurrentUserId();
-        if (string.IsNullOrWhiteSpace(currentUserId))
+        if (string.IsNullOrWhiteSpace(currentUserId) || !Guid.TryParse(currentUserId, out Guid userId))
         {
             throw new AppException("Unauthorized").SetStatusCode(401);
         }
 
-        Guid userId = Guid.Parse(currentUserId);
         User? user = await userRepository.GetByIdAsync(userId);
-        if (user == null)
+        if (user is null)
         {
             throw new AppException("User not found.").SetStatusCode(404);
         }

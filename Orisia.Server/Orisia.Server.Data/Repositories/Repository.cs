@@ -1,171 +1,128 @@
 using System.Linq.Dynamic.Core;
-using System.Linq.Expressions;
-using System.Reflection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Orisia.Server.Core.Pages;
+using Orisia.Server.Data.Entities;
 using Orisia.Server.Data.Interfaces;
 using Orisia.Server.Data.PaginationAndFiltering;
 
-namespace Orisia.Server.Data.Repositories
+namespace Orisia.Server.Data.Repositories;
+
+public class Repository<TEntity>(ApplicationDbContext context) : IRepository<TEntity>
+    where TEntity : GenericEntity
 {
-    public class Repository<TEntity> : IRepository<TEntity>
-   where TEntity : class
+    protected ApplicationDbContext Context { get; } = context;
+
+    public virtual async ValueTask<TEntity?> AddAsync(TEntity? entity)
     {
-        private readonly ApplicationDbContext _context;
-
-        public Repository(ApplicationDbContext context)
+        if (entity is null)
         {
-            _context = context;
+            return null;
         }
 
-        public virtual async ValueTask<TEntity?> AddAsync(TEntity entity)
+        await Context.Set<TEntity>().AddAsync(entity);
+        await Context.SaveChangesAsync();
+        return entity;
+    }
+
+    public virtual async Task<IEnumerable<TEntity>> GetAllAsync()
+    {
+        return await Context.Set<TEntity>()
+            .AsNoTracking()
+            .Where(entity => !entity.IsDeleted)
+            .ToListAsync();
+    }
+
+    public virtual async ValueTask<TEntity?> GetByIdAsync(Guid id)
+    {
+        return await Context.Set<TEntity>()
+            .FirstOrDefaultAsync(entity => entity.Id == id && !entity.IsDeleted);
+    }
+
+    public virtual async Task<bool> DeleteAsync(Guid id)
+    {
+        TEntity? entity = await Context.Set<TEntity>().FindAsync(id);
+        if (entity is null || entity.IsDeleted)
         {
-            if (entity == null)
-            {
-                return null;
-            }
-            
-            await _context.Set<TEntity>().AddAsync(entity);
-            await _context.SaveChangesAsync();
-            return entity;
+            return false;
         }
 
-        public virtual async Task<IEnumerable<TEntity>> GetAllAsync()
+        entity.IsDeleted = true;
+        entity.ModifiedOn = DateTime.UtcNow;
+        await Context.SaveChangesAsync();
+        return true;
+    }
+
+    public virtual async ValueTask<TEntity?> UpdateAsync(TEntity? entity)
+    {
+        if (entity is null)
         {
-            IQueryable<TEntity> query = _context.Set<TEntity>().AsQueryable();
-            PropertyInfo? isDeletedProperty = typeof(TEntity).GetProperty("IsDeleted");
-
-            if (isDeletedProperty != null && isDeletedProperty.PropertyType == typeof(bool))
-            {
-                query = query.Where(e => EF.Property<bool>(e, "IsDeleted") == false);
-            }
-
-            return await query.ToListAsync();
+            return null;
         }
 
-        public virtual async ValueTask<TEntity?> GetByIdAsync(Guid id)
+        TEntity? currentEntity = await Context.Set<TEntity>()
+            .FirstOrDefaultAsync(item => item.Id == entity.Id && !item.IsDeleted);
+
+        if (currentEntity is null)
         {
-            TEntity? entity = await _context.Set<TEntity>().FindAsync(id);
-            PropertyInfo? isDeletedProperty = typeof(TEntity).GetProperty("IsDeleted");
-
-            if (entity != null && isDeletedProperty != null)
-            {
-                bool isDeleted = (bool)isDeletedProperty.GetValue(entity);
-                if (isDeleted)
-                {
-                    return null;
-                }
-            }
-
-            return entity;
+            return null;
         }
 
-        public virtual async Task<bool> DeleteAsync(Guid id)
-        {
-            TEntity? entity = await _context.Set<TEntity>().FindAsync(id);
-            
-            if (entity == null)
-            {
-                return false;
-            }
-            
-            PropertyInfo? propertyInfo = entity.GetType().GetProperty("IsDeleted");
+        DateTime createdOn = currentEntity.CreatedOn;
+        EntityEntry<TEntity> entry = Context.Entry(currentEntity);
+        entry.CurrentValues.SetValues(entity);
+        entry.Property(nameof(GenericEntity.CreatedOn)).CurrentValue = createdOn;
+        currentEntity.ModifiedOn = DateTime.UtcNow;
 
-            if (propertyInfo != null && propertyInfo.PropertyType == typeof(bool))
-            {
-                propertyInfo.SetValue(entity, true, null);
-                _context.Set<TEntity>().Update(entity);
-                await _context.SaveChangesAsync();
-                return true;
-            }
-            else
-            {
-                _context.Set<TEntity>().Remove(entity);
-                await _context.SaveChangesAsync();
-                return true;
-            }
+        await Context.SaveChangesAsync();
+        return currentEntity;
+    }
+
+    public async Task<Paginated<TEntity>> SearchAsync(Filter<TEntity> request)
+    {
+        IQueryable<TEntity> query = Context.Set<TEntity>()
+            .AsNoTracking()
+            .Where(entity => !entity.IsDeleted);
+
+        foreach (var include in request.Includes)
+        {
+            query = query.Include(include);
         }
 
-        public virtual async ValueTask<TEntity?> UpdateAsync(TEntity entity)
+        foreach (string include in request.IncludesAsPropertyPath)
         {
-            if (entity == null)
-            {
-                return null;
-            }
-            
-            Guid entityId = (Guid)entity.GetType().GetProperty("Id").GetValue(entity);
-            
-            TEntity? currentEntity = await _context.Set<TEntity>().FindAsync(entityId);
-
-            if (currentEntity == null)
-            {
-                return null;
-            }
-
-            PropertyInfo? propertyInfo = entity.GetType().GetProperty("ModifiedOn");
-
-            if (propertyInfo != null && propertyInfo.PropertyType == typeof(DateTime))
-            {
-                propertyInfo.SetValue(entity, DateTime.UtcNow, null);
-            }
-
-            EntityEntry<TEntity>? entry = _context.Entry(currentEntity);
-            entry.CurrentValues.SetValues(entity);
-            await _context.SaveChangesAsync();
-
-            return entity;
+            query = query.Include(include);
         }
 
-        public async Task<Paginated<TEntity>> SearchAsync(Filter<TEntity> request)
+        query = query.Where(request.Predicate);
+
+        if (!string.IsNullOrWhiteSpace(request.SortBy))
         {
-            IQueryable<TEntity>? query = _context.Set<TEntity>().AsQueryable().AsNoTracking();
-
-            foreach (Expression<Func<TEntity, object>> include in request.Includes)
-            {
-                query = query.Include(include);
-            }
-
-            foreach (string include in request.IncludesAsPropertyPath)
-            {
-                query = query.Include(include);
-            }
-
-            if (request.SortBy != null)
-            {
-                if (request.SortDescending == true)
-                {
-                    query = query.OrderBy($"{request.SortBy} DESC");
-                }
-                else
-                {
-                    query = query.OrderBy(request.SortBy);
-                }
-            }
-
-            int count = query.Count(request.Predicate);
-
-            if (request.PageNumber != null)
-            {   
-                int page = (int)request.PageNumber!;
-                int itemsPerPage = (int)request.PageSize!;
-                int skip = (page - 1) * itemsPerPage;
-                List<TEntity> filteredItems = await query.Where(request.Predicate).Skip(skip).Take(itemsPerPage).ToListAsync().ConfigureAwait(false);
-
-                return new()
-                {
-                    TotalCount = count,
-                    Items = filteredItems,
-                };
-            }
-
-            List<TEntity> items = await query.Where(request.Predicate).ToListAsync().ConfigureAwait(false);
-
-            return new()
-            {
-                TotalCount = count,
-                Items = items,
-            };
+            query = request.SortDescending == true
+                ? query.OrderBy(request.SortBy + " DESC")
+                : query.OrderBy(request.SortBy);
         }
+
+        int count = await query.CountAsync();
+
+        if (request.PageNumber is int pageNumber)
+        {
+            int pageSize = request.PageSize.GetValueOrDefault(10);
+            if (pageSize <= 0)
+            {
+                pageSize = 10;
+            }
+
+            int skip = (Math.Max(pageNumber, 1) - 1) * pageSize;
+            List<TEntity> page = await query.Skip(skip).Take(pageSize).ToListAsync();
+
+            return new Paginated<TEntity> { TotalCount = count, Items = page };
+        }
+
+        return new Paginated<TEntity>
+        {
+            TotalCount = count,
+            Items = await query.ToListAsync()
+        };
     }
 }

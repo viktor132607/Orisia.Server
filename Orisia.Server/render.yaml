@@ -54,26 +54,6 @@ services:
         value: Orisia
       - key: Email__PasswordResetTokenExpiryMinutes
         value: "30"
-      - key: Payments__OnlineProviderName
-        value: DemoSportPay
-      - key: Payments__OnlinePaymentLabel
-        value: Online card payment
-      - key: Payments__SupportedMethods__0
-        value: online-card
-      - key: Payments__SupportedMethods__1
-        value: bank-transfer
-      - key: Payments__BankTransfer__Beneficiary
-        value: Orisia Ltd.
-      - key: Payments__BankTransfer__Iban
-        value: BG00DEMO12345678901234
-      - key: Payments__BankTransfer__Bic
-        value: DEMOBGSF
-      - key: Payments__BankTransfer__BankName
-        value: Demo Bank
-      - key: Payments__BankTransfer__ReferencePrefix
-        value: SPORT
-      - key: Inventory__LowStockThreshold
-        value: "10"
       - key: DevelopmentSettings__ResetDatabaseOnStart
         value: "false"
       - key: DevelopmentSettings__ExposeEmailPreviewLinks
