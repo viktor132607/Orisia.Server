@@ -18,6 +18,7 @@ public static class ServiceExtension
         services.AddSingleton<IEmailNotificationService, ConsoleEmailNotificationService>();
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IPostRepository, PostRepository>();
+        services.AddScoped<IEventRepository, EventRepository>();
 
         return services;
     }

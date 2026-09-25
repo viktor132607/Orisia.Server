@@ -21,6 +21,88 @@ partial class ApplicationDbContextModelSnapshot : ModelSnapshot
 
         NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+        modelBuilder.Entity("Orisia.Server.Data.Entities.Event", b =>
+        {
+            b.Property<Guid>("Id")
+                .ValueGeneratedOnAdd()
+                .HasColumnType("uuid");
+
+            b.Property<bool>("AllDay")
+                .HasColumnType("boolean");
+
+            b.Property<Guid?>("CoverMediaId")
+                .HasColumnType("uuid");
+
+            b.Property<DateTime>("CreatedOn")
+                .HasColumnType("timestamp with time zone");
+
+            b.Property<string>("DescriptionBg")
+                .IsRequired()
+                .HasColumnType("text");
+
+            b.Property<string>("DescriptionEn")
+                .IsRequired()
+                .HasColumnType("text");
+
+            b.Property<DateTime?>("EndAt")
+                .HasColumnType("timestamp with time zone");
+
+            b.Property<int>("EventType")
+                .HasColumnType("integer");
+
+            b.Property<bool>("Featured")
+                .HasColumnType("boolean");
+
+            b.Property<bool>("IsDeleted")
+                .HasColumnType("boolean");
+
+            b.Property<string>("Location")
+                .HasMaxLength(300)
+                .HasColumnType("character varying(300)");
+
+            b.Property<DateTime>("ModifiedOn")
+                .HasColumnType("timestamp with time zone");
+
+            b.Property<string>("RecurrenceRule")
+                .HasMaxLength(500)
+                .HasColumnType("character varying(500)");
+
+            b.Property<string>("Slug")
+                .IsRequired()
+                .HasMaxLength(180)
+                .HasColumnType("character varying(180)");
+
+            b.Property<DateTime>("StartAt")
+                .HasColumnType("timestamp with time zone");
+
+            b.Property<int>("Status")
+                .HasColumnType("integer");
+
+            b.Property<string>("TitleBg")
+                .IsRequired()
+                .HasMaxLength(250)
+                .HasColumnType("character varying(250)");
+
+            b.Property<string>("TitleEn")
+                .IsRequired()
+                .HasMaxLength(250)
+                .HasColumnType("character varying(250)");
+
+            b.HasKey("Id");
+
+            b.HasIndex("EventType", "Status", "StartAt");
+
+            b.HasIndex("Featured", "Status", "StartAt");
+
+            b.HasIndex("Slug")
+                .IsUnique()
+                .HasFilter("\"IsDeleted\" = false");
+
+            b.HasIndex("Status", "StartAt");
+
+            b.ToTable("Events");
+        });
+
         modelBuilder.Entity("Orisia.Server.Data.Entities.Post", b =>
         {
             b.Property<Guid>("Id")
