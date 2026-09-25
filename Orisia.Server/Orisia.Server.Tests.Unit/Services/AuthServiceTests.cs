@@ -120,7 +120,7 @@ public class AuthServiceTests
             Email = "customer@example.com",
             Names = "Customer Example",
             Phone = "123456789",
-            Role = Roles.RegisteredCustomer,
+            Role = Roles.User,
             PasswordHash = "temporaryPasswordHash"
         };
 

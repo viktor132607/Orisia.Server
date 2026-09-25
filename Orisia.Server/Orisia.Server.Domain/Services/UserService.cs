@@ -13,14 +13,13 @@ public class UserService(IUserRepository userRepository, IAuthService authServic
     public async Task<IEnumerable<UserResponse>?> GetAsync()
     {
         IEnumerable<User> users = await userRepository.GetAllAsync();
-
         return users.Select(MapUser);
     }
 
     public async Task<UserResponse?> GetByIdAsync(Guid id)
     {
         User? user = await userRepository.GetByIdAsync(id);
-        if (user == null)
+        if (user is null)
         {
             throw new AppException("User not found.").SetStatusCode(404);
         }
@@ -30,38 +29,27 @@ public class UserService(IUserRepository userRepository, IAuthService authServic
 
     public async Task<UserResponse?> GetCurrentUserAsync()
     {
-        string? currentUserId = await authService.GetCurrentUserId();
-        if (string.IsNullOrWhiteSpace(currentUserId))
-        {
-            throw new AppException("Unauthorized").SetStatusCode(401);
-        }
-
-        return await GetByIdAsync(Guid.Parse(currentUserId));
+        Guid currentUserId = await GetCurrentUserIdAsync();
+        return await GetByIdAsync(currentUserId);
     }
 
     public async Task<UserResponse?> UpdateCurrentUserAsync(UpdateCurrentUserRequest request)
     {
-        string? currentUserId = await authService.GetCurrentUserId();
-        if (string.IsNullOrWhiteSpace(currentUserId))
-        {
-            throw new AppException("Unauthorized").SetStatusCode(401);
-        }
+        Guid currentUserId = await GetCurrentUserIdAsync();
 
-        UpdateUserRequest updateRequest = new()
+        return await UpdateAsync(new UpdateUserRequest
         {
-            Id = Guid.Parse(currentUserId),
+            Id = currentUserId,
             Email = request.Email,
             Names = request.Names,
             Phone = request.Phone
-        };
-
-        return await UpdateAsync(updateRequest);
+        });
     }
 
     public async Task<UserResponse?> UpdateAsync(UpdateUserRequest request)
     {
         User? userBeforeUpdate = await userRepository.GetByIdAsync(request.Id);
-        if (userBeforeUpdate == null)
+        if (userBeforeUpdate is null)
         {
             throw new AppException("User not found.").SetStatusCode(404);
         }
@@ -79,7 +67,7 @@ public class UserService(IUserRepository userRepository, IAuthService authServic
         };
 
         User? updatedUser = await userRepository.UpdateAsync(updatedUserPayload);
-        if (updatedUser == null)
+        if (updatedUser is null)
         {
             throw new AppException("User not found.").SetStatusCode(404);
         }
@@ -89,49 +77,70 @@ public class UserService(IUserRepository userRepository, IAuthService authServic
 
     public async Task<bool> DeleteAsync(Guid id)
     {
-        UserResponse user = (await GetByIdAsync(id))!;
-
-        if (!await userRepository.DeleteAsync(user.Id))
+        Guid currentUserId = await GetCurrentUserIdAsync();
+        if (currentUserId == id)
         {
-            return false;
+            throw new AppException("You cannot delete your own account from the admin users endpoint.")
+                .SetStatusCode(409);
         }
 
-        return true;
+        _ = await GetByIdAsync(id);
+        return await userRepository.DeleteAsync(id);
     }
 
-    public Task<bool> PromoteToAdminAsync(RoleChangeRequest request)
+    public async Task<UserResponse> SetRoleAsync(RoleChangeRequest request)
     {
-        return ChangeRoleAsync(request, Roles.Admin);
-    }
+        string role = request.Role.Trim();
 
-    public Task<bool> DemoteToRegisteredCustomerAsync(RoleChangeRequest request)
-    {
-        return ChangeRoleAsync(request, Roles.RegisteredCustomer);
-    }
+        if (!Roles.IsValid(role))
+        {
+            throw new AppException($"Invalid role. Allowed roles: {Roles.Admin}, {Roles.Editor}, {Roles.User}.")
+                .SetStatusCode(400);
+        }
 
-    private async Task<bool> ChangeRoleAsync(RoleChangeRequest request, string toRole)
-    {
-        User? userBeforeUpdate = await userRepository.GetByIdAsync(request.UserId);
+        Guid currentUserId = await GetCurrentUserIdAsync();
+        if (currentUserId == request.UserId && role != Roles.Admin)
+        {
+            throw new AppException("An administrator cannot remove their own Admin role.")
+                .SetStatusCode(409);
+        }
 
-        if (userBeforeUpdate == null)
+        User? user = await userRepository.GetByIdAsync(request.UserId);
+        if (user is null)
         {
             throw new AppException("User not found.").SetStatusCode(404);
         }
 
         User updatedUserPayload = new()
         {
-            Id = request.UserId,
-            Email = userBeforeUpdate.Email,
-            Names = userBeforeUpdate.Names,
-            Phone = userBeforeUpdate.Phone,
-            PasswordHash = userBeforeUpdate.PasswordHash,
-            Role = toRole,
-            RefreshToken = userBeforeUpdate.RefreshToken,
-            RefreshTokenExpiryTime = userBeforeUpdate.RefreshTokenExpiryTime
+            Id = user.Id,
+            Email = user.Email,
+            Names = user.Names,
+            Phone = user.Phone,
+            PasswordHash = user.PasswordHash,
+            Role = role,
+            RefreshToken = user.RefreshToken,
+            RefreshTokenExpiryTime = user.RefreshTokenExpiryTime
         };
 
         User? updatedUser = await userRepository.UpdateAsync(updatedUserPayload);
-        return updatedUser != null;
+        if (updatedUser is null)
+        {
+            throw new AppException("User not found.").SetStatusCode(404);
+        }
+
+        return MapUser(updatedUser);
+    }
+
+    private async Task<Guid> GetCurrentUserIdAsync()
+    {
+        string? currentUserId = await authService.GetCurrentUserId();
+        if (string.IsNullOrWhiteSpace(currentUserId) || !Guid.TryParse(currentUserId, out Guid userId))
+        {
+            throw new AppException("Unauthorized").SetStatusCode(401);
+        }
+
+        return userId;
     }
 
     private static UserResponse MapUser(User user)
@@ -142,7 +151,7 @@ public class UserService(IUserRepository userRepository, IAuthService authServic
             Email = user.Email,
             Names = user.Names,
             Phone = user.Phone,
-            Role = user.Role,
+            Role = user.Role ?? Roles.User
         };
     }
 }

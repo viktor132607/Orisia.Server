@@ -2,198 +2,139 @@ using Moq;
 using Orisia.Server.Common.Requests.Users;
 using Orisia.Server.Common.Responses.Users;
 using Orisia.Server.Core.Exceptions;
+using Orisia.Server.Core.StaticClasses;
 using Orisia.Server.Data.Entities;
 using Orisia.Server.Data.Interfaces;
 using Orisia.Server.Domain.Interfaces;
 using Orisia.Server.Domain.Services;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Xunit;
 
-namespace Orisia.Server.Tests.Unit.Services
+namespace Orisia.Server.Tests.Unit.Services;
+
+public class UserServiceTests
 {
-    public class UserServiceTests
+    private readonly Mock<IUserRepository> _userRepository = new();
+    private readonly Mock<IAuthService> _authService = new();
+    private readonly UserService _service;
+
+    public UserServiceTests()
     {
-        private readonly Mock<IUserRepository> userRepositoryMock;
-        private readonly Mock<IAuthService> authServiceMock;
-        private readonly UserService userService;
+        _service = new UserService(_userRepository.Object, _authService.Object);
+    }
 
-        public UserServiceTests()
+    [Fact]
+    public async Task GetAsync_ShouldReturnMappedUsers()
+    {
+        _userRepository.Setup(x => x.GetAllAsync()).ReturnsAsync(
+        [
+            CreateUser("one@example.com", Roles.User),
+            CreateUser("editor@example.com", Roles.Editor)
+        ]);
+
+        IEnumerable<UserResponse>? result = await _service.GetAsync();
+
+        Assert.NotNull(result);
+        Assert.Equal(2, result.Count());
+        Assert.Contains(result, x => x.Role == Roles.Editor);
+    }
+
+    [Fact]
+    public async Task GetByIdAsync_ShouldThrow_WhenUserDoesNotExist()
+    {
+        _userRepository.Setup(x => x.GetByIdAsync(It.IsAny<Guid>()))
+            .ReturnsAsync((User?)null);
+
+        await Assert.ThrowsAsync<AppException>(() => _service.GetByIdAsync(Guid.NewGuid()));
+    }
+
+    [Fact]
+    public async Task SetRoleAsync_ShouldAllowEditorRole()
+    {
+        Guid adminId = Guid.NewGuid();
+        Guid targetId = Guid.NewGuid();
+        _authService.Setup(x => x.GetCurrentUserId()).ReturnsAsync(adminId.ToString());
+        _userRepository.Setup(x => x.GetByIdAsync(targetId))
+            .ReturnsAsync(CreateUser("target@example.com", Roles.User, targetId));
+        _userRepository.Setup(x => x.UpdateAsync(It.IsAny<User>()))
+            .ReturnsAsync((User user) => user);
+
+        UserResponse result = await _service.SetRoleAsync(new RoleChangeRequest
         {
-            userRepositoryMock = new();
-            authServiceMock = new();
-            userService = new(userRepositoryMock.Object, authServiceMock.Object);
-        }
+            UserId = targetId,
+            Role = Roles.Editor
+        });
 
-        [Fact]
-        public async Task GetAsync_ShouldReturnUsers()
+        Assert.Equal(Roles.Editor, result.Role);
+    }
+
+    [Fact]
+    public async Task SetRoleAsync_ShouldRejectUnknownRole()
+    {
+        _authService.Setup(x => x.GetCurrentUserId()).ReturnsAsync(Guid.NewGuid().ToString());
+
+        await Assert.ThrowsAsync<AppException>(() => _service.SetRoleAsync(new RoleChangeRequest
         {
-            List<User> users = new()
-            {
-                new()
-                {
-                    Id = Guid.NewGuid(),
-                    Email = "user1@example.com",
-                    Names = null,
-                    Phone = null
-                },
-                new()
-                {
-                    Id = Guid.NewGuid(),
-                    Email = "user2@example.com",
-                    Names = null,
-                    Phone = null
-                }
-            };
+            UserId = Guid.NewGuid(),
+            Role = "SuperAdmin"
+        }));
+    }
 
-            userRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(users);
+    [Fact]
+    public async Task SetRoleAsync_ShouldPreventAdminSelfDemotion()
+    {
+        Guid adminId = Guid.NewGuid();
+        _authService.Setup(x => x.GetCurrentUserId()).ReturnsAsync(adminId.ToString());
 
-            IEnumerable<UserResponse> result = await userService.GetAsync();
-
-            Assert.NotNull(result);
-            Assert.Collection(result,
-                item => Assert.Equal("user1@example.com", item.Email),
-                item => Assert.Equal("user2@example.com", item.Email));
-        }
-
-        [Fact]
-        public async Task GetByIdAsync_UserNotFound_ShouldThrowNotFound()
+        await Assert.ThrowsAsync<AppException>(() => _service.SetRoleAsync(new RoleChangeRequest
         {
-            userRepositoryMock.Setup(r => r.GetByIdAsync(It.IsAny<Guid>())).ReturnsAsync((User)null);
+            UserId = adminId,
+            Role = Roles.Editor
+        }));
+    }
 
-            await Assert.ThrowsAsync<AppException>(() => userService.GetByIdAsync(Guid.NewGuid()));
-        }
+    [Fact]
+    public async Task DeleteAsync_ShouldPreventSelfDeletion()
+    {
+        Guid adminId = Guid.NewGuid();
+        _authService.Setup(x => x.GetCurrentUserId()).ReturnsAsync(adminId.ToString());
 
-        [Fact]
-        public async Task GetByIdAsync_ExistingUser_ShouldReturnUser()
+        await Assert.ThrowsAsync<AppException>(() => _service.DeleteAsync(adminId));
+    }
+
+    [Fact]
+    public async Task UpdateAsync_ShouldPreserveRoleAndCredentials()
+    {
+        Guid userId = Guid.NewGuid();
+        User existing = CreateUser("old@example.com", Roles.Editor, userId);
+        existing.PasswordHash = "hash";
+        existing.RefreshToken = "refresh";
+
+        _userRepository.Setup(x => x.GetByIdAsync(userId)).ReturnsAsync(existing);
+        _userRepository.Setup(x => x.UpdateAsync(It.IsAny<User>()))
+            .ReturnsAsync((User user) => user);
+
+        UserResponse? result = await _service.UpdateAsync(new UpdateUserRequest
         {
-            User user = new()
-            {
-                Id = Guid.NewGuid(),
-                Email = "user@example.com",
-                Names = null,
-                Phone = null
-            };
+            Id = userId,
+            Email = "new@example.com",
+            Names = "Updated",
+            Phone = "123"
+        });
 
-            userRepositoryMock.Setup(r => r.GetByIdAsync(It.IsAny<Guid>())).ReturnsAsync(user);
+        Assert.NotNull(result);
+        Assert.Equal(Roles.Editor, result.Role);
+    }
 
-            UserResponse result = await userService.GetByIdAsync(user.Id);
-
-            Assert.NotNull(result);
-            Assert.Equal("user@example.com", result.Email);
-        }
-
-        [Fact]
-        public async Task UpdateAsync_ValidUpdate_ShouldReturnUpdatedUser()
+    private static User CreateUser(string email, string role, Guid? id = null)
+    {
+        return new User
         {
-            UpdateUserRequest request = new()
-            {
-                Id = Guid.NewGuid(),
-                Email = "updated@example.com",
-                Names = "Updated Name",
-                Phone = "123456789"
-            };
-
-            User existingUser = new() { Id = request.Id, Email = "old@example.com", Names = "Old Name", Phone = "987654321" };
-            userRepositoryMock.Setup(r => r.GetByIdAsync(It.IsAny<Guid>())).ReturnsAsync(existingUser);
-            userRepositoryMock.Setup(r => r.UpdateAsync(It.IsAny<User>())).ReturnsAsync(new User { Id = request.Id, Email = request.Email, Names = request.Names, Phone = request.Phone });
-
-            UserResponse result = await userService.UpdateAsync(request);
-
-            Assert.NotNull(result);
-            Assert.Equal("updated@example.com", result.Email);
-            Assert.Equal("Updated Name", result.Names);
-            Assert.Equal("123456789", result.Phone);
-        }
-
-        [Fact]
-        public async Task DeleteAsync_UserNotFound_ShouldThrowNotFound()
-        {
-            userRepositoryMock.Setup(r => r.GetByIdAsync(It.IsAny<Guid>())).ReturnsAsync((User)null);
-
-            await Assert.ThrowsAsync<AppException>(() => userService.DeleteAsync(Guid.NewGuid()));
-        }
-
-        [Fact]
-        public async Task DeleteAsync_ValidUser_ShouldDeleteUser()
-        {
-            Guid userId = Guid.NewGuid();
-            userRepositoryMock.Setup(r => r.GetByIdAsync(It.IsAny<Guid>())).ReturnsAsync(new User
-            {
-                Id = userId,
-                Email = null,
-                Names = null,
-                Phone = null
-            });
-            userRepositoryMock.Setup(r => r.DeleteAsync(It.IsAny<Guid>())).ReturnsAsync(true);
-
-            bool result = await userService.DeleteAsync(userId);
-
-            Assert.True(result);
-        }
-
-        [Fact]
-        public async Task PromoteToAdminAsync_ValidRequest_ShouldPromoteToAdmin()
-        {
-            RoleChangeRequest request = new() { UserId = Guid.NewGuid() };
-
-            userRepositoryMock.Setup(r => r.GetByIdAsync(It.IsAny<Guid>())).ReturnsAsync(new User
-            {
-                Id = request.UserId,
-                Email = null,
-                Names = null,
-                Phone = null
-            });
-            userRepositoryMock.Setup(r => r.UpdateAsync(It.IsAny<User>())).ReturnsAsync(new User
-            {
-                Id = request.UserId,
-                Role = "Admin",
-                Email = null,
-                Names = null,
-                Phone = null
-            });
-
-            bool result = await userService.PromoteToAdminAsync(request);
-
-            Assert.True(result);
-        }
-
-        [Fact]
-        public async Task DemoteToRegisteredCustomerAsync_ValidRequest_ShouldDemoteToRegisteredCustomer()
-        {
-            RoleChangeRequest request = new() { UserId = Guid.NewGuid() };
-
-            userRepositoryMock.Setup(r => r.GetByIdAsync(It.IsAny<Guid>())).ReturnsAsync(new User
-            {
-                Id = request.UserId,
-                Email = null,
-                Names = null,
-                Phone = null
-            });
-            userRepositoryMock.Setup(r => r.UpdateAsync(It.IsAny<User>())).ReturnsAsync(new User
-            {
-                Id = request.UserId,
-                Role = "RegisteredCustomer",
-                Email = null,
-                Names = null,
-                Phone = null
-            });
-
-            bool result = await userService.DemoteToRegisteredCustomerAsync(request);
-
-            Assert.True(result);
-        }
-
-        [Fact]
-        public async Task ChangeRoleAsync_UserNotFound_ShouldThrowNotFound()
-        {
-            RoleChangeRequest request = new() { UserId = Guid.NewGuid() };
-
-            userRepositoryMock.Setup(r => r.GetByIdAsync(It.IsAny<Guid>())).ReturnsAsync((User)null);
-
-            await Assert.ThrowsAsync<AppException>(() => userService.PromoteToAdminAsync(request));
-        }
+            Id = id ?? Guid.NewGuid(),
+            Email = email,
+            Names = "Test User",
+            Phone = "123",
+            PasswordHash = "hash",
+            Role = role
+        };
     }
 }

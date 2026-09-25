@@ -46,7 +46,7 @@ public class AuthService(
             PasswordHash = "temporaryPasswordHash",
             Names = request.Names,
             Phone = request.Phone,
-            Role = Roles.RegisteredCustomer
+            Role = Roles.User
         };
 
         string hashedPassword = new PasswordHasher<User>()
@@ -208,7 +208,7 @@ public class AuthService(
         [
             new Claim(ClaimTypes.Name, user.Email),
             new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-            new Claim(ClaimTypes.Role, user.Role ?? Roles.RegisteredCustomer)
+            new Claim(ClaimTypes.Role, user.Role ?? Roles.User)
         ];
 
         SigningCredentials creds = JwtSecurityConfiguration.CreateSigningCredentials(_jwtOptions);

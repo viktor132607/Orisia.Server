@@ -94,7 +94,7 @@ public class AuthController(IAuthService authService, IUserService userService) 
         return Ok("You are authenticated!");
     }
 
-    [Authorize(Roles = Roles.Admin)]
+    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
     [HttpGet("admin-only")]
     public IActionResult AdminOnlyEndpoint()
     {

@@ -9,6 +9,7 @@ using Orisia.Server.Common.Options;
 using Orisia.Server.Data;
 using Orisia.Server.Data.Helpers;
 using Orisia.Server.Domain.Authentication;
+using Orisia.Server.Core.StaticClasses;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
@@ -57,7 +58,14 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         options.TokenValidationParameters = JwtSecurityConfiguration.CreateTokenValidationParameters(jwtOptions);
     });
 
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy(AuthorizationPolicies.AdminOnly, policy =>
+        policy.RequireRole(Roles.Admin));
+
+    options.AddPolicy(AuthorizationPolicies.ContentManagement, policy =>
+        policy.RequireRole(Roles.Admin, Roles.Editor));
+});
 
 builder.Services.AddCors(options =>
 {

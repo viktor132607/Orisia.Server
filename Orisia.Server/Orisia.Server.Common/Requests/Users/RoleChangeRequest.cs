@@ -6,4 +6,7 @@ public class RoleChangeRequest
 {
     [Required]
     public required Guid UserId { get; set; }
+
+    [Required]
+    public required string Role { get; set; }
 }

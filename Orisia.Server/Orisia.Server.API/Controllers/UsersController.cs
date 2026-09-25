@@ -8,7 +8,7 @@ using Orisia.Server.Domain.Interfaces;
 
 namespace Orisia.Server.API.Controllers;
 
-[Authorize(Roles = Roles.Admin)]
+[Authorize(Policy = AuthorizationPolicies.AdminOnly)]
 [ApiController]
 [Route("api/[controller]")]
 public class UsersController(IUserService userService, IAuthService authService) : ControllerBase
@@ -18,8 +18,8 @@ public class UsersController(IUserService userService, IAuthService authService)
     {
         return await ControllerProcessor.ProcessAsync(() => userService.GetAsync(), this);
     }
-    
-    [HttpGet("{id}")]
+
+    [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetByIdAsync(Guid id)
     {
         return await ControllerProcessor.ProcessAsync(() => userService.GetByIdAsync(id), this);
@@ -31,28 +31,32 @@ public class UsersController(IUserService userService, IAuthService authService)
         return await ControllerProcessor.ProcessAsync(() => authService.RegisterAsync(request), this, true);
     }
 
-    [HttpPut]
-    public async Task<IActionResult> UpdateAsync([FromBody] UpdateUserRequest request)
+    [HttpPut("{id:guid}")]
+    public async Task<IActionResult> UpdateAsync(Guid id, [FromBody] UpdateUserRequest request)
     {
+        if (id != request.Id)
+        {
+            return BadRequest("Route user id does not match payload user id.");
+        }
+
         return await ControllerProcessor.ProcessAsync(() => userService.UpdateAsync(request), this, true);
     }
 
-    [HttpDelete("{id}")]
+    [HttpPut("{id:guid}/role")]
+    public async Task<IActionResult> SetRoleAsync(Guid id, [FromBody] RoleChangeRequest request)
+    {
+        if (id != request.UserId)
+        {
+            return BadRequest("Route user id does not match payload user id.");
+        }
+
+        return await ControllerProcessor.ProcessAsync(() => userService.SetRoleAsync(request), this, true);
+    }
+
+    [HttpDelete("{id:guid}")]
     public async Task<IActionResult> DeleteAsync(Guid id)
     {
         return await ControllerProcessor.ProcessAsync<object>(
             async () => await userService.DeleteAsync(id), this);
-    }
-    
-    [HttpPut("promote-to-admin")]
-    public async Task<IActionResult> PromoteToAdmin([FromBody] RoleChangeRequest request)
-    {
-        return await ControllerProcessor.ProcessAsync(() => userService.PromoteToAdminAsync(request), this, true);
-    }
-    
-    [HttpPut("demote-to-registered-customer")]
-    public async Task<IActionResult> DemoteToRegisteredCustomer([FromBody] RoleChangeRequest request)
-    {
-        return await ControllerProcessor.ProcessAsync(() => userService.DemoteToRegisteredCustomerAsync(request), this, true);
     }
 }

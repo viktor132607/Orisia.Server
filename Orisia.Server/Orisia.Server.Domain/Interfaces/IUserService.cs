@@ -11,6 +11,5 @@ public interface IUserService
     Task<UserResponse?> UpdateCurrentUserAsync(UpdateCurrentUserRequest request);
     Task<UserResponse?> UpdateAsync(UpdateUserRequest request);
     Task<bool> DeleteAsync(Guid id);
-    Task<bool> PromoteToAdminAsync(RoleChangeRequest request);
-    Task<bool> DemoteToRegisteredCustomerAsync(RoleChangeRequest request); 
+    Task<UserResponse> SetRoleAsync(RoleChangeRequest request);
 }
