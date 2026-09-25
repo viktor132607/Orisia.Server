@@ -29,11 +29,7 @@ public class EventRepository(ApplicationDbContext context)
         EventType? type = null,
         bool? featured = null)
     {
-        IQueryable<Event> query = Context.Events
-            .AsNoTracking()
-            .Where(item =>
-                !item.IsDeleted
-                && item.Status == PublicationStatus.Published);
+        IQueryable<Event> query = PublishedQuery();
 
         if (from.HasValue)
         {
@@ -62,5 +58,84 @@ public class EventRepository(ApplicationDbContext context)
             .OrderBy(item => item.StartAt)
             .ThenBy(item => item.TitleBg)
             .ToListAsync();
+    }
+
+    public async Task<IEnumerable<Event>> GetUpcomingAsync(
+        DateTime from,
+        EventType? type = null,
+        int take = 10)
+    {
+        IQueryable<Event> query = PublishedQuery()
+            .Where(item =>
+                item.EndAt.HasValue
+                    ? item.EndAt.Value >= from
+                    : item.StartAt >= from);
+
+        if (type.HasValue)
+        {
+            query = query.Where(item => item.EventType == type.Value);
+        }
+
+        return await query
+            .OrderBy(item => item.StartAt)
+            .ThenBy(item => item.TitleBg)
+            .Take(take)
+            .ToListAsync();
+    }
+
+    public async Task<IEnumerable<Event>> GetPastAsync(
+        DateTime before,
+        EventType? type = null,
+        int take = 10)
+    {
+        IQueryable<Event> query = PublishedQuery()
+            .Where(item =>
+                item.EndAt.HasValue
+                    ? item.EndAt.Value < before
+                    : item.StartAt < before);
+
+        if (type.HasValue)
+        {
+            query = query.Where(item => item.EventType == type.Value);
+        }
+
+        return await query
+            .OrderByDescending(item => item.EndAt ?? item.StartAt)
+            .ThenByDescending(item => item.StartAt)
+            .Take(take)
+            .ToListAsync();
+    }
+
+    public async Task<IEnumerable<Event>> GetForAdminAsync(
+        EventType? type = null,
+        PublicationStatus? status = null)
+    {
+        IQueryable<Event> query = Context.Events
+            .AsNoTracking()
+            .Where(item => !item.IsDeleted);
+
+        if (type.HasValue)
+        {
+            query = query.Where(item => item.EventType == type.Value);
+        }
+
+        if (status.HasValue)
+        {
+            query = query.Where(item => item.Status == status.Value);
+        }
+
+        return await query
+            .OrderByDescending(item => item.ModifiedOn)
+            .ThenByDescending(item => item.StartAt)
+            .ToListAsync();
+    }
+
+    private IQueryable<Event> PublishedQuery()
+    {
+        return Context.Events
+            .AsNoTracking()
+            .Where(item =>
+                !item.IsDeleted
+                && item.Status == PublicationStatus.Published);
     }
 }

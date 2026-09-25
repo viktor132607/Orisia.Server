@@ -90,6 +90,43 @@ public class EventRepositoryTests
         Assert.Single(result);
     }
 
+    [Fact]
+    public async Task GetUpcomingAsync_ShouldReturnOnlyFuturePublishedEvents()
+    {
+        DateTime now = DateTime.UtcNow;
+
+        _context.Events.AddRange(
+            CreateEvent("past", now.AddHours(-2), PublicationStatus.Published),
+            CreateEvent("future", now.AddHours(2), PublicationStatus.Published),
+            CreateEvent("draft", now.AddHours(3), PublicationStatus.Draft));
+
+        await _context.SaveChangesAsync();
+
+        IEnumerable<Event> result = await _repository.GetUpcomingAsync(now);
+
+        Event only = Assert.Single(result);
+        Assert.Equal("future", only.Slug);
+    }
+
+    [Fact]
+    public async Task GetPastAsync_ShouldSortMostRecentFirst()
+    {
+        DateTime now = DateTime.UtcNow;
+
+        _context.Events.AddRange(
+            CreateEvent("older", now.AddDays(-2), PublicationStatus.Published),
+            CreateEvent("recent", now.AddHours(-1), PublicationStatus.Published),
+            CreateEvent("future", now.AddHours(1), PublicationStatus.Published));
+
+        await _context.SaveChangesAsync();
+
+        List<Event> result = (await _repository.GetPastAsync(now)).ToList();
+
+        Assert.Equal(2, result.Count);
+        Assert.Equal("recent", result[0].Slug);
+        Assert.Equal("older", result[1].Slug);
+    }
+
     private static Event CreateEvent(
         string slug,
         DateTime startAt,
