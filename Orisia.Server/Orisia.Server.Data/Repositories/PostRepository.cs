@@ -70,6 +70,56 @@ public class PostRepository(ApplicationDbContext context)
         return await query.ToListAsync();
     }
 
+    public async Task<IEnumerable<Post>> GetPublishedForFeedAsync(
+        DateTime? from = null,
+        DateTime? to = null,
+        PostType? type = null,
+        bool? featured = null,
+        int? take = null)
+    {
+        DateTime now = DateTime.UtcNow;
+
+        IQueryable<Post> query = Context.Posts
+            .AsNoTracking()
+            .Include(post => post.Author)
+            .Where(post =>
+                !post.IsDeleted
+                && post.Status == PublicationStatus.Published
+                && post.PublishedAt.HasValue
+                && post.PublishedAt.Value <= now);
+
+        if (from.HasValue)
+        {
+            query = query.Where(post => post.PublishedAt >= from.Value);
+        }
+
+        if (to.HasValue)
+        {
+            query = query.Where(post => post.PublishedAt <= to.Value);
+        }
+
+        if (type.HasValue)
+        {
+            query = query.Where(post => post.Type == type.Value);
+        }
+
+        if (featured.HasValue)
+        {
+            query = query.Where(post => post.Featured == featured.Value);
+        }
+
+        query = query
+            .OrderByDescending(post => post.PublishedAt)
+            .ThenByDescending(post => post.CreatedOn);
+
+        if (take is > 0)
+        {
+            query = query.Take(take.Value);
+        }
+
+        return await query.ToListAsync();
+    }
+
     public async Task<IEnumerable<Post>> GetForAdminAsync(
         PostType? type = null,
         PublicationStatus? status = null)

@@ -73,17 +73,42 @@ public class PostRepositoryTests
         Assert.Equal("published", only.Slug);
     }
 
+    [Fact]
+    public async Task GetPublishedForFeedAsync_ShouldFilterByDateTypeAndFeatured()
+    {
+        DateTime now = DateTime.UtcNow;
+
+        _context.Posts.AddRange(
+            CreatePost("matching", PublicationStatus.Published, now.AddHours(-2), featured: true, type: PostType.Blog),
+            CreatePost("wrong-type", PublicationStatus.Published, now.AddHours(-2), featured: true, type: PostType.News),
+            CreatePost("too-old", PublicationStatus.Published, now.AddDays(-10), featured: true, type: PostType.Blog),
+            CreatePost("not-featured", PublicationStatus.Published, now.AddHours(-1), featured: false, type: PostType.Blog));
+
+        await _context.SaveChangesAsync();
+
+        IEnumerable<Post> result = await _repository.GetPublishedForFeedAsync(
+            now.AddDays(-1),
+            now,
+            PostType.Blog,
+            true,
+            10);
+
+        Post only = Assert.Single(result);
+        Assert.Equal("matching", only.Slug);
+    }
+
     private static Post CreatePost(
         string slug,
         PublicationStatus status = PublicationStatus.Draft,
         DateTime? publishedAt = null,
         bool featured = false,
-        bool isDeleted = false)
+        bool isDeleted = false,
+        PostType type = PostType.News)
     {
         return new Post
         {
             Slug = slug,
-            Type = PostType.News,
+            Type = type,
             Status = status,
             TitleBg = "Заглавие",
             TitleEn = "Title",

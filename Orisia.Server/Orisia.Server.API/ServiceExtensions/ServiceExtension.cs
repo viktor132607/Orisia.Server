@@ -16,6 +16,7 @@ public static class ServiceExtension
         services.AddTransient<IPostService, PostService>();
         services.AddTransient<IEventService, EventService>();
         services.AddTransient<ICalendarService, CalendarService>();
+        services.AddTransient<IFeedService, FeedService>();
         services.AddSingleton<IPasswordResetTokenStore, MemoryPasswordResetTokenStore>();
         services.AddSingleton<IEmailNotificationService, ConsoleEmailNotificationService>();
         services.AddScoped<IUserRepository, UserRepository>();
