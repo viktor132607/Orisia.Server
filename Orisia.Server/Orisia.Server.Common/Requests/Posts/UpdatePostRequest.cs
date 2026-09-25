@@ -29,6 +29,18 @@ public class UpdatePostRequest
     [MaxLength(500)]
     public string? ExcerptEn { get; set; }
 
+    [MaxLength(70)]
+    public string? SeoTitleBg { get; set; }
+
+    [MaxLength(70)]
+    public string? SeoTitleEn { get; set; }
+
+    [MaxLength(180)]
+    public string? SeoDescriptionBg { get; set; }
+
+    [MaxLength(180)]
+    public string? SeoDescriptionEn { get; set; }
+
     public Guid? CoverMediaId { get; set; }
 
     public bool Featured { get; set; }

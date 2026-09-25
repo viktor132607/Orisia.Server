@@ -116,6 +116,32 @@ public class PostServiceTests
     }
 
     [Fact]
+    public async Task GetAdminByIdAsync_ShouldGenerateSeoFallbacks()
+    {
+        Guid id = Guid.NewGuid();
+        _posts.Setup(x => x.GetByIdWithAuthorAsync(id))
+            .ReturnsAsync(new Post
+            {
+                Id = id,
+                Slug = "seo-fallback",
+                Type = PostType.Blog,
+                Status = PublicationStatus.Draft,
+                TitleBg = "Блог заглавие",
+                TitleEn = "Blog title",
+                BodyBg = "<p>Дълго съдържание за SEO описание.</p>",
+                BodyEn = "<p>Long content for SEO description.</p>",
+                ExcerptBg = "Кратко описание"
+            });
+
+        var result = await _service.GetAdminByIdAsync(id);
+
+        Assert.Equal("Блог заглавие", result.SeoTitleBg);
+        Assert.Equal("Blog title", result.SeoTitleEn);
+        Assert.Equal("Кратко описание", result.SeoDescriptionBg);
+        Assert.Equal("Long content for SEO description.", result.SeoDescriptionEn);
+    }
+
+    [Fact]
     public async Task GetPublishedAsync_ShouldRejectInvalidTake()
     {
         await Assert.ThrowsAsync<AppException>(() => _service.GetPublishedAsync(take: 0));

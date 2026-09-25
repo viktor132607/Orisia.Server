@@ -17,6 +17,11 @@ public class PostResponse
     public string? ExcerptBg { get; set; }
     public string? ExcerptEn { get; set; }
 
+    public required string SeoTitleBg { get; set; }
+    public required string SeoTitleEn { get; set; }
+    public required string SeoDescriptionBg { get; set; }
+    public required string SeoDescriptionEn { get; set; }
+
     public Guid? CoverMediaId { get; set; }
     public bool Featured { get; set; }
     public DateTime? PublishedAt { get; set; }

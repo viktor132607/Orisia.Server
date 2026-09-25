@@ -26,6 +26,18 @@ public class PostConfiguration : IEntityTypeConfiguration<Post>
         builder.Property(post => post.ExcerptEn)
             .HasMaxLength(500);
 
+        builder.Property(post => post.SeoTitleBg)
+            .HasMaxLength(70);
+
+        builder.Property(post => post.SeoTitleEn)
+            .HasMaxLength(70);
+
+        builder.Property(post => post.SeoDescriptionBg)
+            .HasMaxLength(180);
+
+        builder.Property(post => post.SeoDescriptionEn)
+            .HasMaxLength(180);
+
         builder.HasIndex(post => post.Slug)
             .IsUnique()
             .HasFilter("\"IsDeleted\" = false");

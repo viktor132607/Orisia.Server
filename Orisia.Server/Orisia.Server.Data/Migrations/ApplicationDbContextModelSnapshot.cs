@@ -64,6 +64,22 @@ partial class ApplicationDbContextModelSnapshot : ModelSnapshot
             b.Property<DateTime?>("PublishedAt")
                 .HasColumnType("timestamp with time zone");
 
+            b.Property<string>("SeoDescriptionBg")
+                .HasMaxLength(180)
+                .HasColumnType("character varying(180)");
+
+            b.Property<string>("SeoDescriptionEn")
+                .HasMaxLength(180)
+                .HasColumnType("character varying(180)");
+
+            b.Property<string>("SeoTitleBg")
+                .HasMaxLength(70)
+                .HasColumnType("character varying(70)");
+
+            b.Property<string>("SeoTitleEn")
+                .HasMaxLength(70)
+                .HasColumnType("character varying(70)");
+
             b.Property<string>("Slug")
                 .IsRequired()
                 .HasMaxLength(180)

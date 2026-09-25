@@ -93,6 +93,10 @@ public class PostService(
             BodyEn = request.BodyEn.Trim(),
             ExcerptBg = NormalizeOptional(request.ExcerptBg),
             ExcerptEn = NormalizeOptional(request.ExcerptEn),
+            SeoTitleBg = NormalizeOptional(request.SeoTitleBg),
+            SeoTitleEn = NormalizeOptional(request.SeoTitleEn),
+            SeoDescriptionBg = NormalizeOptional(request.SeoDescriptionBg),
+            SeoDescriptionEn = NormalizeOptional(request.SeoDescriptionEn),
             CoverMediaId = request.CoverMediaId,
             Featured = request.Featured,
             AuthorId = authorId
@@ -133,6 +137,10 @@ public class PostService(
             BodyEn = request.BodyEn.Trim(),
             ExcerptBg = NormalizeOptional(request.ExcerptBg),
             ExcerptEn = NormalizeOptional(request.ExcerptEn),
+            SeoTitleBg = NormalizeOptional(request.SeoTitleBg),
+            SeoTitleEn = NormalizeOptional(request.SeoTitleEn),
+            SeoDescriptionBg = NormalizeOptional(request.SeoDescriptionBg),
+            SeoDescriptionEn = NormalizeOptional(request.SeoDescriptionEn),
             CoverMediaId = request.CoverMediaId,
             Featured = request.Featured,
             PublishedAt = existing.PublishedAt,
@@ -232,6 +240,10 @@ public class PostService(
             BodyEn = post.BodyEn,
             ExcerptBg = post.ExcerptBg,
             ExcerptEn = post.ExcerptEn,
+            SeoTitleBg = post.SeoTitleBg,
+            SeoTitleEn = post.SeoTitleEn,
+            SeoDescriptionBg = post.SeoDescriptionBg,
+            SeoDescriptionEn = post.SeoDescriptionEn,
             CoverMediaId = post.CoverMediaId,
             Featured = post.Featured,
             PublishedAt = post.PublishedAt,
@@ -253,6 +265,10 @@ public class PostService(
             BodyEn = post.BodyEn,
             ExcerptBg = post.ExcerptBg,
             ExcerptEn = post.ExcerptEn,
+            SeoTitleBg = ResolveSeoTitle(post.SeoTitleBg, post.TitleBg),
+            SeoTitleEn = ResolveSeoTitle(post.SeoTitleEn, post.TitleEn),
+            SeoDescriptionBg = ResolveSeoDescription(post.SeoDescriptionBg, post.ExcerptBg, post.BodyBg),
+            SeoDescriptionEn = ResolveSeoDescription(post.SeoDescriptionEn, post.ExcerptEn, post.BodyEn),
             CoverMediaId = post.CoverMediaId,
             Featured = post.Featured,
             PublishedAt = post.PublishedAt,
@@ -315,5 +331,35 @@ public class PostService(
     private static string? NormalizeOptional(string? value)
     {
         return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+    }
+
+    private static string ResolveSeoTitle(string? seoTitle, string fallbackTitle)
+    {
+        string value = string.IsNullOrWhiteSpace(seoTitle) ? fallbackTitle : seoTitle;
+        return Truncate(value.Trim(), 70);
+    }
+
+    private static string ResolveSeoDescription(string? seoDescription, string? excerpt, string body)
+    {
+        string source = !string.IsNullOrWhiteSpace(seoDescription)
+            ? seoDescription
+            : !string.IsNullOrWhiteSpace(excerpt)
+                ? excerpt
+                : body;
+
+        string plainText = Regex.Replace(source, "<[^>]+>", " ");
+        plainText = Regex.Replace(plainText, @"\s+", " ").Trim();
+
+        return Truncate(plainText, 180);
+    }
+
+    private static string Truncate(string value, int maxLength)
+    {
+        if (value.Length <= maxLength)
+        {
+            return value;
+        }
+
+        return value[..maxLength].TrimEnd();
     }
 }

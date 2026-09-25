@@ -16,6 +16,11 @@ public class Post : GenericEntity
     public string? ExcerptBg { get; set; }
     public string? ExcerptEn { get; set; }
 
+    public string? SeoTitleBg { get; set; }
+    public string? SeoTitleEn { get; set; }
+    public string? SeoDescriptionBg { get; set; }
+    public string? SeoDescriptionEn { get; set; }
+
     public Guid? CoverMediaId { get; set; }
     public bool Featured { get; set; }
     public DateTime? PublishedAt { get; set; }
