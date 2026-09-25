@@ -1,0 +1,41 @@
+using Microsoft.EntityFrameworkCore;
+using Orisia.Server.Data.Entities;
+using Orisia.Server.Data.Interfaces;
+
+namespace Orisia.Server.Data.Repositories;
+
+public class MediaRepository(ApplicationDbContext context)
+    : Repository<Media>(context), IMediaRepository
+{
+    public async Task<Media?> GetWithUploaderAsync(Guid id)
+    {
+        return await Context.Media
+            .AsNoTracking()
+            .Include(item => item.UploadedBy)
+            .FirstOrDefaultAsync(item => item.Id == id && !item.IsDeleted);
+    }
+
+    public async Task<IEnumerable<Media>> GetAllWithUploaderAsync()
+    {
+        return await Context.Media
+            .AsNoTracking()
+            .Include(item => item.UploadedBy)
+            .Where(item => !item.IsDeleted)
+            .OrderByDescending(item => item.CreatedOn)
+            .ToListAsync();
+    }
+
+    public async Task<bool> IsInUseAsync(Guid id)
+    {
+        bool usedByPost = await Context.Posts.AnyAsync(post =>
+            !post.IsDeleted && post.CoverMediaId == id);
+
+        if (usedByPost)
+        {
+            return true;
+        }
+
+        return await Context.Events.AnyAsync(item =>
+            !item.IsDeleted && item.CoverMediaId == id);
+    }
+}

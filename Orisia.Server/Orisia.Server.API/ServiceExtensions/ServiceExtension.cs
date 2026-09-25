@@ -17,11 +17,15 @@ public static class ServiceExtension
         services.AddTransient<IEventService, EventService>();
         services.AddTransient<ICalendarService, CalendarService>();
         services.AddTransient<IFeedService, FeedService>();
+        services.AddTransient<IMediaService, MediaService>();
         services.AddSingleton<IPasswordResetTokenStore, MemoryPasswordResetTokenStore>();
         services.AddSingleton<IEmailNotificationService, ConsoleEmailNotificationService>();
+        services.AddSingleton<IMediaStorage, LocalMediaStorage>();
+        services.AddSingleton<IImageProcessor, ImageSharpImageProcessor>();
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IPostRepository, PostRepository>();
         services.AddScoped<IEventRepository, EventRepository>();
+        services.AddScoped<IMediaRepository, MediaRepository>();
 
         return services;
     }

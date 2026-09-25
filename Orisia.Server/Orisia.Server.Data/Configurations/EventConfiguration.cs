@@ -39,5 +39,10 @@ public class EventConfiguration : IEntityTypeConfiguration<Event>
         builder.HasIndex(item => new { item.Status, item.StartAt });
         builder.HasIndex(item => new { item.EventType, item.Status, item.StartAt });
         builder.HasIndex(item => new { item.Featured, item.Status, item.StartAt });
+
+        builder.HasOne(item => item.CoverMedia)
+            .WithMany()
+            .HasForeignKey(item => item.CoverMediaId)
+            .OnDelete(DeleteBehavior.SetNull);
     }
 }

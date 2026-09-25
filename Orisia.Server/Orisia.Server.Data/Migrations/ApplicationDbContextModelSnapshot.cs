@@ -90,6 +90,8 @@ partial class ApplicationDbContextModelSnapshot : ModelSnapshot
 
             b.HasKey("Id");
 
+            b.HasIndex("CoverMediaId");
+
             b.HasIndex("EventType", "Status", "StartAt");
 
             b.HasIndex("Featured", "Status", "StartAt");
@@ -101,6 +103,84 @@ partial class ApplicationDbContextModelSnapshot : ModelSnapshot
             b.HasIndex("Status", "StartAt");
 
             b.ToTable("Events");
+        });
+
+        modelBuilder.Entity("Orisia.Server.Data.Entities.Media", b =>
+        {
+            b.Property<Guid>("Id")
+                .ValueGeneratedOnAdd()
+                .HasColumnType("uuid");
+
+            b.Property<string>("AltBg")
+                .HasMaxLength(300)
+                .HasColumnType("character varying(300)");
+
+            b.Property<string>("AltEn")
+                .HasMaxLength(300)
+                .HasColumnType("character varying(300)");
+
+            b.Property<DateTime>("CreatedOn")
+                .HasColumnType("timestamp with time zone");
+
+            b.Property<string>("Extension")
+                .IsRequired()
+                .HasMaxLength(16)
+                .HasColumnType("character varying(16)");
+
+            b.Property<int>("Height")
+                .HasColumnType("integer");
+
+            b.Property<bool>("IsDeleted")
+                .HasColumnType("boolean");
+
+            b.Property<string>("MimeType")
+                .IsRequired()
+                .HasMaxLength(100)
+                .HasColumnType("character varying(100)");
+
+            b.Property<DateTime>("ModifiedOn")
+                .HasColumnType("timestamp with time zone");
+
+            b.Property<string>("OriginalFileName")
+                .IsRequired()
+                .HasMaxLength(255)
+                .HasColumnType("character varying(255)");
+
+            b.Property<string>("Sha256")
+                .IsRequired()
+                .HasMaxLength(64)
+                .HasColumnType("character varying(64)");
+
+            b.Property<long>("SizeBytes")
+                .HasColumnType("bigint");
+
+            b.Property<string>("StorageKey")
+                .IsRequired()
+                .HasMaxLength(500)
+                .HasColumnType("character varying(500)");
+
+            b.Property<string>("ThumbnailStorageKey")
+                .HasMaxLength(500)
+                .HasColumnType("character varying(500)");
+
+            b.Property<Guid?>("UploadedById")
+                .HasColumnType("uuid");
+
+            b.Property<int>("Width")
+                .HasColumnType("integer");
+
+            b.HasKey("Id");
+
+            b.HasIndex("CreatedOn");
+
+            b.HasIndex("Sha256");
+
+            b.HasIndex("StorageKey")
+                .IsUnique();
+
+            b.HasIndex("UploadedById");
+
+            b.ToTable("Media");
         });
 
         modelBuilder.Entity("Orisia.Server.Data.Entities.Post", b =>
@@ -187,6 +267,8 @@ partial class ApplicationDbContextModelSnapshot : ModelSnapshot
 
             b.HasIndex("AuthorId");
 
+            b.HasIndex("CoverMediaId");
+
             b.HasIndex("Featured", "Status");
 
             b.HasIndex("Slug")
@@ -243,6 +325,26 @@ partial class ApplicationDbContextModelSnapshot : ModelSnapshot
             b.ToTable("Users");
         });
 
+        modelBuilder.Entity("Orisia.Server.Data.Entities.Event", b =>
+        {
+            b.HasOne("Orisia.Server.Data.Entities.Media", "CoverMedia")
+                .WithMany()
+                .HasForeignKey("CoverMediaId")
+                .OnDelete(DeleteBehavior.SetNull);
+
+            b.Navigation("CoverMedia");
+        });
+
+        modelBuilder.Entity("Orisia.Server.Data.Entities.Media", b =>
+        {
+            b.HasOne("Orisia.Server.Data.Entities.User", "UploadedBy")
+                .WithMany("MediaUploads")
+                .HasForeignKey("UploadedById")
+                .OnDelete(DeleteBehavior.SetNull);
+
+            b.Navigation("UploadedBy");
+        });
+
         modelBuilder.Entity("Orisia.Server.Data.Entities.Post", b =>
         {
             b.HasOne("Orisia.Server.Data.Entities.User", "Author")
@@ -250,11 +352,20 @@ partial class ApplicationDbContextModelSnapshot : ModelSnapshot
                 .HasForeignKey("AuthorId")
                 .OnDelete(DeleteBehavior.SetNull);
 
+            b.HasOne("Orisia.Server.Data.Entities.Media", "CoverMedia")
+                .WithMany()
+                .HasForeignKey("CoverMediaId")
+                .OnDelete(DeleteBehavior.SetNull);
+
             b.Navigation("Author");
+
+            b.Navigation("CoverMedia");
         });
 
         modelBuilder.Entity("Orisia.Server.Data.Entities.User", b =>
         {
+            b.Navigation("MediaUploads");
+
             b.Navigation("Posts");
         });
 #pragma warning restore 612, 618

@@ -20,6 +20,7 @@ builder.Services.Configure<ClientAppOptions>(builder.Configuration.GetSection(Cl
 builder.Services.Configure<EmailOptions>(builder.Configuration.GetSection(EmailOptions.SectionName));
 builder.Services.Configure<CorsOptions>(builder.Configuration.GetSection(CorsOptions.SectionName));
 builder.Services.Configure<DevelopmentOptions>(builder.Configuration.GetSection(DevelopmentOptions.SectionName));
+builder.Services.Configure<MediaStorageOptions>(builder.Configuration.GetSection(MediaStorageOptions.SectionName));
 builder.Services.AddSingleton<IValidateOptions<JwtOptions>, JwtOptionsValidator>();
 
 JwtOptions jwtOptions = builder.Configuration
@@ -112,6 +113,7 @@ app.Logger.LogInformation(
     resolvedDatabaseConnection.SourceKey);
 
 app.UseMiddleware<ExceptionHandlerMiddleware>();
+app.UseStaticFiles();
 app.UseCors("ConfiguredOrigins");
 
 app.MapOpenApi();

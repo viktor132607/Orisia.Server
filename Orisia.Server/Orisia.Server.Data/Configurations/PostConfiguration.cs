@@ -49,5 +49,10 @@ public class PostConfiguration : IEntityTypeConfiguration<Post>
             .WithMany(user => user.Posts)
             .HasForeignKey(post => post.AuthorId)
             .OnDelete(DeleteBehavior.SetNull);
+
+        builder.HasOne(post => post.CoverMedia)
+            .WithMany()
+            .HasForeignKey(post => post.CoverMediaId)
+            .OnDelete(DeleteBehavior.SetNull);
     }
 }

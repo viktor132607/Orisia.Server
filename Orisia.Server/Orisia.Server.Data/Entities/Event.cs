@@ -20,6 +20,7 @@ public class Event : GenericEntity
     public string? Location { get; set; }
 
     public Guid? CoverMediaId { get; set; }
+    public Media? CoverMedia { get; set; }
     public bool Featured { get; set; }
 
     public PublicationStatus Status { get; set; } = PublicationStatus.Draft;

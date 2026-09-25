@@ -22,6 +22,7 @@ public class Post : GenericEntity
     public string? SeoDescriptionEn { get; set; }
 
     public Guid? CoverMediaId { get; set; }
+    public Media? CoverMedia { get; set; }
     public bool Featured { get; set; }
     public DateTime? PublishedAt { get; set; }
 

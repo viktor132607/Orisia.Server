@@ -11,4 +11,5 @@ public class User : GenericEntity
     public DateTime? RefreshTokenExpiryTime { get; set; }
 
     public ICollection<Post> Posts { get; set; } = new List<Post>();
+    public ICollection<Media> MediaUploads { get; set; } = new List<Media>();
 }
