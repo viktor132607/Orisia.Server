@@ -22,6 +22,7 @@ public static class ServiceExtension
         services.AddTransient<IReviewService, ReviewService>();
         services.AddTransient<IDanceService, DanceService>();
         services.AddTransient<IInquiryService, InquiryService>();
+        services.AddTransient<IAdminDashboardService, AdminDashboardService>();
         services.AddSingleton<IPasswordResetTokenStore, MemoryPasswordResetTokenStore>();
         services.AddSingleton<IEmailNotificationService, ConsoleEmailNotificationService>();
         services.AddSingleton<IMediaStorage, LocalMediaStorage>();
