@@ -5,6 +5,7 @@
         <AssemblyName>Orisia.Server.Tests.Unit</AssemblyName>
         <RootNamespace>Orisia.Server.Tests.Unit</RootNamespace>
         <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
     </PropertyGroup>
 
     <ItemGroup>

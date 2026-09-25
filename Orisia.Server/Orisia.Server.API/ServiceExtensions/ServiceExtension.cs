@@ -16,6 +16,7 @@ public static class ServiceExtension
         services.AddSingleton<IPasswordResetTokenStore, MemoryPasswordResetTokenStore>();
         services.AddSingleton<IEmailNotificationService, ConsoleEmailNotificationService>();
         services.AddScoped<IUserRepository, UserRepository>();
+        services.AddScoped<IPostRepository, PostRepository>();
 
         return services;
     }
