@@ -51,7 +51,15 @@ public class MediaRepository(ApplicationDbContext context)
             return true;
         }
 
-        return await Context.GalleryMedia.AnyAsync(item =>
+        bool usedByGallery = await Context.GalleryMedia.AnyAsync(item =>
             !item.IsDeleted && item.MediaId == id);
+
+        if (usedByGallery)
+        {
+            return true;
+        }
+
+        return await Context.Dances.AnyAsync(item =>
+            !item.IsDeleted && item.ThumbnailMediaId == id);
     }
 }

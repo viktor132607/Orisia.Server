@@ -12,6 +12,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<GalleryAlbum> GalleryAlbums => Set<GalleryAlbum>();
     public DbSet<GalleryMedia> GalleryMedia => Set<GalleryMedia>();
     public DbSet<SiteReview> SiteReviews => Set<SiteReview>();
+    public DbSet<Dance> Dances => Set<Dance>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

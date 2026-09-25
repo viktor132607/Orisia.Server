@@ -21,6 +21,83 @@ partial class ApplicationDbContextModelSnapshot : ModelSnapshot
 
         NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+        modelBuilder.Entity("Orisia.Server.Data.Entities.Dance", b =>
+        {
+            b.Property<Guid>("Id")
+                .ValueGeneratedOnAdd()
+                .HasColumnType("uuid");
+
+            b.Property<bool>("Active")
+                .HasColumnType("boolean");
+
+            b.Property<DateTime>("CreatedOn")
+                .HasColumnType("timestamp with time zone");
+
+            b.Property<string>("DescriptionBg")
+                .IsRequired()
+                .HasColumnType("text");
+
+            b.Property<string>("DescriptionEn")
+                .IsRequired()
+                .HasColumnType("text");
+
+            b.Property<int?>("DurationSeconds")
+                .HasColumnType("integer");
+
+            b.Property<bool>("IsDeleted")
+                .HasColumnType("boolean");
+
+            b.Property<DateTime>("ModifiedOn")
+                .HasColumnType("timestamp with time zone");
+
+            b.Property<string>("Region")
+                .HasMaxLength(120)
+                .HasColumnType("character varying(120)");
+
+            b.Property<string>("Rhythm")
+                .HasMaxLength(120)
+                .HasColumnType("character varying(120)");
+
+            b.Property<string>("Slug")
+                .IsRequired()
+                .HasMaxLength(180)
+                .HasColumnType("character varying(180)");
+
+            b.Property<int>("SortOrder")
+                .HasColumnType("integer");
+
+            b.Property<Guid?>("ThumbnailMediaId")
+                .HasColumnType("uuid");
+
+            b.Property<string>("TitleBg")
+                .IsRequired()
+                .HasMaxLength(250)
+                .HasColumnType("character varying(250)");
+
+            b.Property<string>("TitleEn")
+                .IsRequired()
+                .HasMaxLength(250)
+                .HasColumnType("character varying(250)");
+
+            b.Property<string>("VideoUrl")
+                .HasMaxLength(1000)
+                .HasColumnType("character varying(1000)");
+
+            b.HasKey("Id");
+
+            b.HasIndex("Active", "SortOrder");
+
+            b.HasIndex("Region");
+
+            b.HasIndex("Slug")
+                .IsUnique()
+                .HasFilter("\"IsDeleted\" = false");
+
+            b.HasIndex("ThumbnailMediaId");
+
+            b.ToTable("Dances");
+        });
+
         modelBuilder.Entity("Orisia.Server.Data.Entities.Event", b =>
         {
             b.Property<Guid>("Id")
@@ -418,6 +495,16 @@ partial class ApplicationDbContextModelSnapshot : ModelSnapshot
             b.HasKey("Id");
 
             b.ToTable("Users");
+        });
+
+        modelBuilder.Entity("Orisia.Server.Data.Entities.Dance", b =>
+        {
+            b.HasOne("Orisia.Server.Data.Entities.Media", "ThumbnailMedia")
+                .WithMany()
+                .HasForeignKey("ThumbnailMediaId")
+                .OnDelete(DeleteBehavior.SetNull);
+
+            b.Navigation("ThumbnailMedia");
         });
 
         modelBuilder.Entity("Orisia.Server.Data.Entities.Event", b =>

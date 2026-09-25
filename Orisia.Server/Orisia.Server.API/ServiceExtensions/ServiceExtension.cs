@@ -20,16 +20,18 @@ public static class ServiceExtension
         services.AddTransient<IMediaService, MediaService>();
         services.AddTransient<IGalleryService, GalleryService>();
         services.AddTransient<IReviewService, ReviewService>();
+        services.AddTransient<IDanceService, DanceService>();
         services.AddSingleton<IPasswordResetTokenStore, MemoryPasswordResetTokenStore>();
         services.AddSingleton<IEmailNotificationService, ConsoleEmailNotificationService>();
         services.AddSingleton<IMediaStorage, LocalMediaStorage>();
-        services.AddSingleton<IImageProcessor, ImageSharpImageProcessor>();
+        services.AddSingleton<IImageProcessor, SkiaSharpImageProcessor>();
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IPostRepository, PostRepository>();
         services.AddScoped<IEventRepository, EventRepository>();
         services.AddScoped<IMediaRepository, MediaRepository>();
         services.AddScoped<IGalleryRepository, GalleryRepository>();
         services.AddScoped<ISiteReviewRepository, SiteReviewRepository>();
+        services.AddScoped<IDanceRepository, DanceRepository>();
 
         return services;
     }
