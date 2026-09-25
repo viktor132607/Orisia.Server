@@ -16,6 +16,14 @@ public class PostRepository(ApplicationDbContext context)
             .FirstOrDefaultAsync(post => post.Slug == slug && !post.IsDeleted);
     }
 
+    public async Task<Post?> GetByIdWithAuthorAsync(Guid id)
+    {
+        return await Context.Posts
+            .AsNoTracking()
+            .Include(post => post.Author)
+            .FirstOrDefaultAsync(post => post.Id == id && !post.IsDeleted);
+    }
+
     public async Task<bool> SlugExistsAsync(string slug, Guid? excludingPostId = null)
     {
         return await Context.Posts.AnyAsync(post =>
@@ -60,5 +68,30 @@ public class PostRepository(ApplicationDbContext context)
         }
 
         return await query.ToListAsync();
+    }
+
+    public async Task<IEnumerable<Post>> GetForAdminAsync(
+        PostType? type = null,
+        PublicationStatus? status = null)
+    {
+        IQueryable<Post> query = Context.Posts
+            .AsNoTracking()
+            .Include(post => post.Author)
+            .Where(post => !post.IsDeleted);
+
+        if (type.HasValue)
+        {
+            query = query.Where(post => post.Type == type.Value);
+        }
+
+        if (status.HasValue)
+        {
+            query = query.Where(post => post.Status == status.Value);
+        }
+
+        return await query
+            .OrderByDescending(post => post.ModifiedOn)
+            .ThenByDescending(post => post.CreatedOn)
+            .ToListAsync();
     }
 }

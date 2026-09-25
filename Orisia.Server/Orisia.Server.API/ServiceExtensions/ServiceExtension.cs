@@ -13,6 +13,7 @@ public static class ServiceExtension
         services.AddTransient<IAuthService, AuthService>();
         services.AddTransient<IUserService, UserService>();
         services.AddTransient<IGdprService, GdprService>();
+        services.AddTransient<IPostService, PostService>();
         services.AddSingleton<IPasswordResetTokenStore, MemoryPasswordResetTokenStore>();
         services.AddSingleton<IEmailNotificationService, ConsoleEmailNotificationService>();
         services.AddScoped<IUserRepository, UserRepository>();
