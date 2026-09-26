@@ -167,6 +167,101 @@ partial class ApplicationDbContextModelSnapshot : ModelSnapshot
             b.ToTable("Dances");
         });
 
+        modelBuilder.Entity("Orisia.Server.Data.Entities.DanceGroup", b =>
+        {
+            b.Property<Guid>("Id")
+                .ValueGeneratedOnAdd()
+                .HasColumnType("uuid");
+
+            b.Property<bool>("Active")
+                .HasColumnType("boolean");
+
+            b.Property<DateTime>("CreatedOn")
+                .HasColumnType("timestamp with time zone");
+
+            b.Property<string>("DescriptionBg")
+                .IsRequired()
+                .HasColumnType("text");
+
+            b.Property<string>("DescriptionEn")
+                .IsRequired()
+                .HasColumnType("text");
+
+            b.Property<bool>("IsDeleted")
+                .HasColumnType("boolean");
+
+            b.Property<string>("Location")
+                .HasMaxLength(300)
+                .HasColumnType("character varying(300)");
+
+            b.Property<DateTime>("ModifiedOn")
+                .HasColumnType("timestamp with time zone");
+
+            b.Property<string>("NameBg")
+                .IsRequired()
+                .HasMaxLength(250)
+                .HasColumnType("character varying(250)");
+
+            b.Property<string>("NameEn")
+                .IsRequired()
+                .HasMaxLength(250)
+                .HasColumnType("character varying(250)");
+
+            b.Property<string>("Slug")
+                .IsRequired()
+                .HasMaxLength(180)
+                .HasColumnType("character varying(180)");
+
+            b.Property<int>("SortOrder")
+                .HasColumnType("integer");
+
+            b.HasKey("Id");
+
+            b.HasIndex("Active", "SortOrder");
+
+            b.HasIndex("Slug")
+                .IsUnique()
+                .HasFilter("\"IsDeleted\" = false");
+
+            b.ToTable("DanceGroups");
+        });
+
+        modelBuilder.Entity("Orisia.Server.Data.Entities.DanceGroupSchedule", b =>
+        {
+            b.Property<Guid>("Id")
+                .ValueGeneratedOnAdd()
+                .HasColumnType("uuid");
+
+            b.Property<DateTime>("CreatedOn")
+                .HasColumnType("timestamp with time zone");
+
+            b.Property<Guid>("DanceGroupId")
+                .HasColumnType("uuid");
+
+            b.Property<int>("DayOfWeek")
+                .HasColumnType("integer");
+
+            b.Property<int>("DurationMinutes")
+                .HasColumnType("integer");
+
+            b.Property<bool>("IsDeleted")
+                .HasColumnType("boolean");
+
+            b.Property<DateTime>("ModifiedOn")
+                .HasColumnType("timestamp with time zone");
+
+            b.Property<TimeOnly>("StartTime")
+                .HasColumnType("time without time zone");
+
+            b.HasKey("Id");
+
+            b.HasIndex("DanceGroupId", "DayOfWeek", "StartTime")
+                .IsUnique()
+                .HasFilter("\"IsDeleted\" = false");
+
+            b.ToTable("DanceGroupSchedules");
+        });
+
         modelBuilder.Entity("Orisia.Server.Data.Entities.Event", b =>
         {
             b.Property<Guid>("Id")
@@ -598,6 +693,17 @@ partial class ApplicationDbContextModelSnapshot : ModelSnapshot
             b.Navigation("ThumbnailMedia");
         });
 
+        modelBuilder.Entity("Orisia.Server.Data.Entities.DanceGroupSchedule", b =>
+        {
+            b.HasOne("Orisia.Server.Data.Entities.DanceGroup", "DanceGroup")
+                .WithMany("Schedules")
+                .HasForeignKey("DanceGroupId")
+                .OnDelete(DeleteBehavior.Cascade)
+                .IsRequired();
+
+            b.Navigation("DanceGroup");
+        });
+
         modelBuilder.Entity("Orisia.Server.Data.Entities.Event", b =>
         {
             b.HasOne("Orisia.Server.Data.Entities.Media", "CoverMedia")
@@ -677,6 +783,11 @@ partial class ApplicationDbContextModelSnapshot : ModelSnapshot
 
             b.Navigation("ModeratedBy");
             b.Navigation("User");
+        });
+
+        modelBuilder.Entity("Orisia.Server.Data.Entities.DanceGroup", b =>
+        {
+            b.Navigation("Schedules");
         });
 
         modelBuilder.Entity("Orisia.Server.Data.Entities.GalleryAlbum", b =>
