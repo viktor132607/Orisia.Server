@@ -116,7 +116,7 @@ public class GroupService(IGroupRepository groupRepository) : IGroupService
                 throw new AppException("Invalid group start time.").SetStatusCode(400);
             }
 
-            string key = $"{schedule.DayOfWeek}:{startTime.ToString("HH:mm", CultureInfo.InvariantCulture)}";
+            string formattedTime = startTime.ToString("HH:mm", CultureInfo.InvariantCulture);\n            string key = $"{schedule.DayOfWeek}:{formattedTime}";
             if (!unique.Add(key))
                 throw new AppException("Duplicate group schedule.").SetStatusCode(400);
 
