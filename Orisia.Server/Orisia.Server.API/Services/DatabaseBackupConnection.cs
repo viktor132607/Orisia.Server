@@ -25,6 +25,7 @@ public sealed class DatabaseBackupConnection
     }
 
     public string Database => connection.Database!;
+    public string ConnectionString => connection.ConnectionString;
 
     public IReadOnlyDictionary<string, string>
         CreateEnvironment()
@@ -60,4 +61,3 @@ public sealed class DatabaseBackupConnection
             _ => sslMode.ToLowerInvariant()
         };
 }
-

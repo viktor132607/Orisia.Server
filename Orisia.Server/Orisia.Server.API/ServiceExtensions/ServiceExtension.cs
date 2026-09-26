@@ -14,6 +14,7 @@ public static class ServiceExtension
         services.AddSingleton<IDatabaseBackupArchiveValidator, DatabaseBackupArchiveValidator>();
         services.AddSingleton<IDatabaseBackupFileStore, DatabaseBackupFileStore>();
         services.AddSingleton<IPostgresProcessRunner, PostgresProcessRunner>();
+        services.AddSingleton<IPostgresExecutableResolver, PostgresExecutableResolver>();
         services.AddSingleton<IPostgresBackupTool, PostgresBackupTool>();
         services.AddSingleton<IDatabaseBackupService, DatabaseBackupService>();
         services.AddTransient<IAuthService, AuthService>();

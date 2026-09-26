@@ -19,15 +19,16 @@ public interface IPostgresBackupTool
 
 public sealed class PostgresBackupTool(
     DatabaseBackupConnection connection,
-    IPostgresProcessRunner processRunner)
+    IPostgresProcessRunner processRunner,
+    IPostgresExecutableResolver? executableResolver = null)
     : IPostgresBackupTool
 {
-    public Task CreateBackupAsync(
+    public async Task CreateBackupAsync(
         string backupPath,
         CancellationToken cancellationToken) =>
-        processRunner.RunAsync(
+        await processRunner.RunAsync(
             new PostgresProcessRequest(
-                "pg_dump",
+                await ResolveAsync("pg_dump", cancellationToken),
                 [
                     "--no-password",
                     "--format=custom",
@@ -41,12 +42,12 @@ public sealed class PostgresBackupTool(
                 "create the database backup"),
             cancellationToken);
 
-    public Task ValidateArchiveAsync(
+    public async Task ValidateArchiveAsync(
         string backupPath,
         CancellationToken cancellationToken) =>
-        processRunner.RunAsync(
+        await processRunner.RunAsync(
             new PostgresProcessRequest(
-                "pg_restore",
+                await ResolveAsync("pg_restore", cancellationToken),
                 ["--list", backupPath],
                 null,
                 "validate the uploaded database backup"),
@@ -60,7 +61,7 @@ public sealed class PostgresBackupTool(
 
         await processRunner.RunAsync(
             new PostgresProcessRequest(
-                "pg_restore",
+                await ResolveAsync("pg_restore", cancellationToken),
                 [
                     "--no-password",
                     "--clean",
@@ -79,5 +80,9 @@ public sealed class PostgresBackupTool(
 
         NpgsqlConnection.ClearAllPools();
     }
-}
 
+    private Task<string> ResolveAsync(string executable, CancellationToken cancellationToken) =>
+        executableResolver is null
+            ? Task.FromResult(executable)
+            : executableResolver.ResolveAsync(executable, cancellationToken);
+}
