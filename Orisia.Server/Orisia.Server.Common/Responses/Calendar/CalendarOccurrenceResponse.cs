@@ -5,7 +5,9 @@ namespace Orisia.Server.Common.Responses.Calendar;
 public class CalendarOccurrenceResponse
 {
     public required string OccurrenceId { get; set; }
-    public Guid EventId { get; set; }
+    public required string Source { get; set; }
+    public Guid? EventId { get; set; }
+    public Guid? GroupId { get; set; }
     public required string Slug { get; set; }
 
     public required string TitleBg { get; set; }
