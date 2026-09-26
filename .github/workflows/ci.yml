@@ -21,6 +21,22 @@ jobs:
     name: Verify server
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: orisia_ci
+          POSTGRES_PASSWORD: ci-only-password
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      ORISIA_TEST_POSTGRES: Host=localhost;Port=5432;Database=postgres;Username=orisia_ci;Password=ci-only-password;SSL Mode=Disable
 
     defaults:
       run:
@@ -37,6 +53,9 @@ jobs:
 
       - name: Restore
         run: dotnet restore Orisia.Server.sln
+
+      - name: PostgreSQL backup utilities
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
 
       - name: Build
         run: dotnet build Orisia.Server.sln --configuration Release --no-restore

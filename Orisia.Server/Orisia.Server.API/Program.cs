@@ -10,6 +10,7 @@ using Orisia.Server.Data;
 using Orisia.Server.Data.Helpers;
 using Orisia.Server.Domain.Authentication;
 using Orisia.Server.Core.StaticClasses;
+using Orisia.Server.API.Services;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
@@ -52,6 +53,7 @@ catch (InvalidOperationException ex)
 
 builder.Services.AddDbContext<ApplicationDbContext>(
     options => options.UseNpgsql(resolvedDatabaseConnection.ConnectionString));
+builder.Services.AddSingleton(new DatabaseBackupConnection(resolvedDatabaseConnection.ConnectionString));
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -71,10 +73,12 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 ApplicationDbContext db = context.HttpContext.RequestServices
                     .GetRequiredService<ApplicationDbContext>();
 
+                string? tokenRole = context.Principal?.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
                 bool active = await db.Users.AnyAsync(user =>
                     user.Id == userId
                     && !user.IsDeleted
-                    && user.IsActive);
+                    && user.IsActive
+                    && user.Role == tokenRole);
 
                 if (!active)
                 {
@@ -166,13 +170,14 @@ using (IServiceScope scope = app.Services.CreateScope())
         IOptions<DevelopmentOptions> developmentOptionsAccessor = scope.ServiceProvider.GetRequiredService<IOptions<DevelopmentOptions>>();
         DevelopmentOptions developmentOptions = developmentOptionsAccessor.Value;
 
+        app.Logger.LogInformation("Applying Entity Framework Core migrations.");
+        await db.Database.MigrateAsync();
+
         if (app.Environment.IsDevelopment() && developmentOptions.ResetDatabaseOnStart)
         {
             await DatabaseUtils.TruncateAllTablesSafeAsync(db);
         }
 
-        app.Logger.LogInformation("Applying Entity Framework Core migrations.");
-        await db.Database.MigrateAsync();
     }
     catch (Exception ex)
     {
@@ -184,6 +189,16 @@ using (IServiceScope scope = app.Services.CreateScope())
     }
 }
 
-await DbInitializer.SeedAsync(app.Services);
+// Demo accounts must never be created implicitly in production.
+if (app.Environment.IsDevelopment() || builder.Configuration.GetValue<bool>("Seed:DemoData"))
+{
+    await DbInitializer.SeedAsync(app.Services);
+}
+
+app.MapGet("/health/live", () => Results.Ok(new { status = "ok" })).AllowAnonymous();
+app.MapGet("/health/ready", async (ApplicationDbContext db, CancellationToken ct) =>
+    await db.Database.CanConnectAsync(ct)
+        ? Results.Ok(new { status = "ready" })
+        : Results.StatusCode(StatusCodes.Status503ServiceUnavailable)).AllowAnonymous();
 
 app.Run();

@@ -19,6 +19,9 @@ RUN dotnet publish Orisia.Server.API/Orisia.Server.API.csproj -c Release -o out 
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
 WORKDIR /app
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends libgssapi-krb5-2 postgresql-client \
+    && rm -rf /var/lib/apt/lists/*
 COPY --from=build /app/out .
 
 EXPOSE 10000

@@ -10,6 +10,12 @@ public static class ServiceExtension
 {
     public static IServiceCollection AddCustomServices(this IServiceCollection services)
     {
+        services.AddSingleton<IDatabaseBackupOperationLock, DatabaseBackupOperationLock>();
+        services.AddSingleton<IDatabaseBackupArchiveValidator, DatabaseBackupArchiveValidator>();
+        services.AddSingleton<IDatabaseBackupFileStore, DatabaseBackupFileStore>();
+        services.AddSingleton<IPostgresProcessRunner, PostgresProcessRunner>();
+        services.AddSingleton<IPostgresBackupTool, PostgresBackupTool>();
+        services.AddSingleton<IDatabaseBackupService, DatabaseBackupService>();
         services.AddTransient<IAuthService, AuthService>();
         services.AddTransient<IUserService, UserService>();
         services.AddTransient<IGdprService, GdprService>();

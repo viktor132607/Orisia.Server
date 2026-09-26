@@ -21,7 +21,7 @@ FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
 WORKDIR /app
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends libgssapi-krb5-2 \
+    && apt-get install -y --no-install-recommends libgssapi-krb5-2 postgresql-client \
     && rm -rf /var/lib/apt/lists/*
 
 ENV ASPNETCORE_ENVIRONMENT=Production
