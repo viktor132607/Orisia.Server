@@ -27,7 +27,7 @@ await call(`/api/posts/${created.id}/publish`, { method: "POST", headers });
 await call("/api/posts/ci-smoke-post");
 // Validate native image decoding, multipart binding, storage and public file serving.
 const image = new FormData();
-image.append("file", new Blob([Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aZ1sAAAAASUVORK5CYII=", "base64")], { type: "image/png" }), "ci.png");
+image.append("file", new Blob([Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+ip1sAAAAASUVORK5CYII=", "base64")], { type: "image/png" }), "ci.png");
 const media = await (await call("/api/admin/media", { method: "POST", headers: { Authorization: `Bearer ${admin}` }, body: image }, 201)).json();
 await call(new URL(media.url, base).pathname);
 const dump = await (await call("/api/database-backup/export", { headers: { Authorization: `Bearer ${admin}` } })).blob();
