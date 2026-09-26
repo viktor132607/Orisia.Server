@@ -23,6 +23,7 @@ public static class ServiceExtension
         services.AddTransient<IPostService, PostService>();
         services.AddTransient<IEventService, EventService>();
         services.AddTransient<ICalendarService, CalendarService>();
+        services.AddTransient<IGroupService, GroupService>();
         services.AddTransient<IFeedService, FeedService>();
         services.AddTransient<IMediaService, MediaService>();
         services.AddTransient<IGalleryService, GalleryService>();
@@ -37,6 +38,7 @@ public static class ServiceExtension
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IPostRepository, PostRepository>();
         services.AddScoped<IEventRepository, EventRepository>();
+        services.AddScoped<IGroupRepository, GroupRepository>();
         services.AddScoped<IMediaRepository, MediaRepository>();
         services.AddScoped<IGalleryRepository, GalleryRepository>();
         services.AddScoped<ISiteReviewRepository, SiteReviewRepository>();
