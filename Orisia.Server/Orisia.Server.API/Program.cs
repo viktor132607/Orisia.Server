@@ -10,6 +10,8 @@ using Orisia.Server.Data;
 using Orisia.Server.Data.Helpers;
 using Orisia.Server.Domain.Authentication;
 using Orisia.Server.Core.StaticClasses;
+using Orisia.Server.API.Services;
+using Microsoft.Extensions.FileProviders;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
@@ -18,6 +20,12 @@ builder.Services.AddOptions<JwtOptions>()
     .ValidateOnStart();
 builder.Services.Configure<ClientAppOptions>(builder.Configuration.GetSection(ClientAppOptions.SectionName));
 builder.Services.Configure<EmailOptions>(builder.Configuration.GetSection(EmailOptions.SectionName));
+builder.Services.PostConfigure<EmailOptions>(options =>
+{
+    // Never expose a reset URL in a production API response.
+    if (!builder.Environment.IsDevelopment() && options.DeliveryMode.Equals("Console", StringComparison.OrdinalIgnoreCase))
+        options.DeliveryMode = "Disabled";
+});
 builder.Services.Configure<CorsOptions>(builder.Configuration.GetSection(CorsOptions.SectionName));
 builder.Services.Configure<DevelopmentOptions>(builder.Configuration.GetSection(DevelopmentOptions.SectionName));
 builder.Services.Configure<MediaStorageOptions>(builder.Configuration.GetSection(MediaStorageOptions.SectionName));
@@ -52,6 +60,7 @@ catch (InvalidOperationException ex)
 
 builder.Services.AddDbContext<ApplicationDbContext>(
     options => options.UseNpgsql(resolvedDatabaseConnection.ConnectionString));
+builder.Services.AddSingleton(new DatabaseBackupConnection(resolvedDatabaseConnection.ConnectionString));
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -71,10 +80,12 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 ApplicationDbContext db = context.HttpContext.RequestServices
                     .GetRequiredService<ApplicationDbContext>();
 
+                string? tokenRole = context.Principal?.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
                 bool active = await db.Users.AnyAsync(user =>
                     user.Id == userId
                     && !user.IsDeleted
-                    && user.IsActive);
+                    && user.IsActive
+                    && user.Role == tokenRole);
 
                 if (!active)
                 {
@@ -138,6 +149,15 @@ app.Logger.LogInformation(
     resolvedDatabaseConnection.SourceKey);
 
 app.UseMiddleware<ExceptionHandlerMiddleware>();
+MediaStorageOptions mediaOptions = app.Services.GetRequiredService<IOptions<MediaStorageOptions>>().Value;
+string mediaRoot = Path.GetFullPath(Path.IsPathRooted(mediaOptions.RootPath)
+    ? mediaOptions.RootPath : Path.Combine(app.Environment.ContentRootPath, mediaOptions.RootPath));
+Directory.CreateDirectory(mediaRoot);
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(mediaRoot),
+    RequestPath = "/" + mediaOptions.PublicBasePath.Trim('/')
+});
 app.UseStaticFiles();
 app.UseCors("ConfiguredOrigins");
 
@@ -166,13 +186,15 @@ using (IServiceScope scope = app.Services.CreateScope())
         IOptions<DevelopmentOptions> developmentOptionsAccessor = scope.ServiceProvider.GetRequiredService<IOptions<DevelopmentOptions>>();
         DevelopmentOptions developmentOptions = developmentOptionsAccessor.Value;
 
+        app.Logger.LogInformation("Applying Entity Framework Core migrations.");
+        await db.Database.MigrateAsync();
+        await AdminBootstrapper.SeedAsync(db, builder.Configuration["BootstrapAdmin:Email"], builder.Configuration["BootstrapAdmin:Password"]);
+
         if (app.Environment.IsDevelopment() && developmentOptions.ResetDatabaseOnStart)
         {
             await DatabaseUtils.TruncateAllTablesSafeAsync(db);
         }
 
-        app.Logger.LogInformation("Applying Entity Framework Core migrations.");
-        await db.Database.MigrateAsync();
     }
     catch (Exception ex)
     {
@@ -184,6 +206,16 @@ using (IServiceScope scope = app.Services.CreateScope())
     }
 }
 
-await DbInitializer.SeedAsync(app.Services);
+// Demo accounts must never be created implicitly in production.
+if (app.Environment.IsDevelopment() || builder.Configuration.GetValue<bool>("Seed:DemoData"))
+{
+    await DbInitializer.SeedAsync(app.Services);
+}
+
+app.MapGet("/health/live", () => Results.Ok(new { status = "ok" })).AllowAnonymous();
+app.MapGet("/health/ready", async (ApplicationDbContext db, CancellationToken ct) =>
+    await db.Database.CanConnectAsync(ct)
+        ? Results.Ok(new { status = "ready" })
+        : Results.StatusCode(StatusCodes.Status503ServiceUnavailable)).AllowAnonymous();
 
 app.Run();

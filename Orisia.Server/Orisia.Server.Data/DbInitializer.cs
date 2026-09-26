@@ -12,5 +12,6 @@ public static class DbInitializer
 
         ApplicationDbContext db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         await UserSeeder.SeedAsync(db);
+        await CmsDemoSeeder.SeedAsync(db);
     }
 }
