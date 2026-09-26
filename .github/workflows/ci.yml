@@ -66,3 +66,28 @@ jobs:
       - name: Build Render Docker image
         working-directory: .
         run: docker build -t orisia-server:ci .
+
+      - name: Start isolated API smoke environment
+        working-directory: .
+        run: |
+          docker run -d --name orisia-smoke --network host \
+            -e ASPNETCORE_ENVIRONMENT=Production \
+            -e ConnectionStrings__DefaultConnection="$ORISIA_TEST_POSTGRES" \
+            -e Seed__DemoData=true \
+            -e Jwt__Secret=CiOnlyRandomSigningKeyForOrisiaSmokeTests0123456789abcdefghijklmnopqrstuvwxyz \
+            orisia-server:ci
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:10000/health/ready; then exit 0; fi
+            sleep 2
+          done
+          docker logs orisia-smoke
+          exit 1
+
+      - name: API auth, CMS, media and backup smoke tests
+        working-directory: .
+        run: node scripts/backend-smoke.mjs
+
+      - name: API diagnostics
+        if: failure()
+        working-directory: .
+        run: docker logs orisia-smoke || true

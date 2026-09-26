@@ -17,11 +17,18 @@ RUN dotnet publish Orisia.Server.API/Orisia.Server.API.csproj \
     --output /app/publish \
     --no-restore
 
-FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
+FROM mcr.microsoft.com/dotnet/aspnet:10.0-noble AS runtime
 WORKDIR /app
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends libgssapi-krb5-2 postgresql-client \
+    && apt-get install -y --no-install-recommends ca-certificates curl libgssapi-krb5-2 \
+    && install -d /usr/share/postgresql-common/pgdg \
+    && curl --fail --show-error --silent https://www.postgresql.org/media/keys/ACCC4CF8.asc \
+        -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc \
+    && echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt noble-pgdg main" \
+        > /etc/apt/sources.list.d/pgdg.list \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends postgresql-client-18 \
     && rm -rf /var/lib/apt/lists/*
 
 ENV ASPNETCORE_ENVIRONMENT=Production

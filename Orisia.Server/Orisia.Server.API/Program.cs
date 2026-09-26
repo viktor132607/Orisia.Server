@@ -11,6 +11,7 @@ using Orisia.Server.Data.Helpers;
 using Orisia.Server.Domain.Authentication;
 using Orisia.Server.Core.StaticClasses;
 using Orisia.Server.API.Services;
+using Microsoft.Extensions.FileProviders;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
@@ -19,6 +20,12 @@ builder.Services.AddOptions<JwtOptions>()
     .ValidateOnStart();
 builder.Services.Configure<ClientAppOptions>(builder.Configuration.GetSection(ClientAppOptions.SectionName));
 builder.Services.Configure<EmailOptions>(builder.Configuration.GetSection(EmailOptions.SectionName));
+builder.Services.PostConfigure<EmailOptions>(options =>
+{
+    // Never expose a reset URL in a production API response.
+    if (!builder.Environment.IsDevelopment() && options.DeliveryMode.Equals("Console", StringComparison.OrdinalIgnoreCase))
+        options.DeliveryMode = "Disabled";
+});
 builder.Services.Configure<CorsOptions>(builder.Configuration.GetSection(CorsOptions.SectionName));
 builder.Services.Configure<DevelopmentOptions>(builder.Configuration.GetSection(DevelopmentOptions.SectionName));
 builder.Services.Configure<MediaStorageOptions>(builder.Configuration.GetSection(MediaStorageOptions.SectionName));
@@ -142,6 +149,15 @@ app.Logger.LogInformation(
     resolvedDatabaseConnection.SourceKey);
 
 app.UseMiddleware<ExceptionHandlerMiddleware>();
+MediaStorageOptions mediaOptions = app.Services.GetRequiredService<IOptions<MediaStorageOptions>>().Value;
+string mediaRoot = Path.GetFullPath(Path.IsPathRooted(mediaOptions.RootPath)
+    ? mediaOptions.RootPath : Path.Combine(app.Environment.ContentRootPath, mediaOptions.RootPath));
+Directory.CreateDirectory(mediaRoot);
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(mediaRoot),
+    RequestPath = "/" + mediaOptions.PublicBasePath.Trim('/')
+});
 app.UseStaticFiles();
 app.UseCors("ConfiguredOrigins");
 
@@ -172,6 +188,7 @@ using (IServiceScope scope = app.Services.CreateScope())
 
         app.Logger.LogInformation("Applying Entity Framework Core migrations.");
         await db.Database.MigrateAsync();
+        await AdminBootstrapper.SeedAsync(db, builder.Configuration["BootstrapAdmin:Email"], builder.Configuration["BootstrapAdmin:Password"]);
 
         if (app.Environment.IsDevelopment() && developmentOptions.ResetDatabaseOnStart)
         {
