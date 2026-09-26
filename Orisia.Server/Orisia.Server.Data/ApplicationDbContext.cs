@@ -8,6 +8,8 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<User> Users => Set<User>();
     public DbSet<Post> Posts => Set<Post>();
     public DbSet<Event> Events => Set<Event>();
+    public DbSet<DanceGroup> DanceGroups => Set<DanceGroup>();
+    public DbSet<DanceGroupSchedule> DanceGroupSchedules => Set<DanceGroupSchedule>();
     public DbSet<Media> Media => Set<Media>();
     public DbSet<GalleryAlbum> GalleryAlbums => Set<GalleryAlbum>();
     public DbSet<GalleryMedia> GalleryMedia => Set<GalleryMedia>();
