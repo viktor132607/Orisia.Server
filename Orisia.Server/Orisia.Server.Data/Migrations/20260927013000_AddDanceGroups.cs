@@ -73,22 +73,19 @@ public class AddDanceGroups : Migration
             unique: true,
             filter: "\"IsDeleted\" = false");
 
-        Guid groupId = new("8f0e1c0b-3fd7-4f62-a6cb-3097db8e1184");
-        DateTime created = new(2026, 9, 27, 0, 0, 0, DateTimeKind.Utc);
+        migrationBuilder.Sql(
+            """
+            INSERT INTO "DanceGroups"
+                ("Id", "Slug", "NameBg", "NameEn", "DescriptionBg", "DescriptionEn", "Location", "Active", "SortOrder", "CreatedOn", "ModifiedOn", "IsDeleted")
+            VALUES
+                ('8f0e1c0b-3fd7-4f62-a6cb-3097db8e1184', 'makamlii', 'Макамлии', 'Makamlii', 'Танцова група „Макамлии“.', 'Makamlii folk dance group.', 'гр. Русе, ул. Родина 80', TRUE, 0, TIMESTAMPTZ '2026-09-27 00:00:00+00', TIMESTAMPTZ '2026-09-27 00:00:00+00', FALSE);
 
-        migrationBuilder.InsertData(
-            table: "DanceGroups",
-            columns: new[] { "Id", "Slug", "NameBg", "NameEn", "DescriptionBg", "DescriptionEn", "Location", "Active", "SortOrder", "CreatedOn", "ModifiedOn", "IsDeleted" },
-            values: new object[] { groupId, "makamlii", "Макамлии", "Makamlii", "Танцова група „Макамлии“.", "Makamlii folk dance group.", "гр. Русе, ул. Родина 80", true, 0, created, created, false });
-
-        migrationBuilder.InsertData(
-            table: "DanceGroupSchedules",
-            columns: new[] { "Id", "DanceGroupId", "DayOfWeek", "StartTime", "DurationMinutes", "CreatedOn", "ModifiedOn", "IsDeleted" },
-            values: new object[,]
-            {
-                { new Guid("2bd27ce5-3014-4a26-8299-65c283087099"), groupId, 4, new TimeOnly(19, 0), 90, created, created, false },
-                { new Guid("9e14c847-9c75-47bd-a6d8-3256bdb47abf"), groupId, 6, new TimeOnly(19, 0), 90, created, created, false }
-            });
+            INSERT INTO "DanceGroupSchedules"
+                ("Id", "DanceGroupId", "DayOfWeek", "StartTime", "DurationMinutes", "CreatedOn", "ModifiedOn", "IsDeleted")
+            VALUES
+                ('2bd27ce5-3014-4a26-8299-65c283087099', '8f0e1c0b-3fd7-4f62-a6cb-3097db8e1184', 4, TIME '19:00', 90, TIMESTAMPTZ '2026-09-27 00:00:00+00', TIMESTAMPTZ '2026-09-27 00:00:00+00', FALSE),
+                ('9e14c847-9c75-47bd-a6d8-3256bdb47abf', '8f0e1c0b-3fd7-4f62-a6cb-3097db8e1184', 6, TIME '19:00', 90, TIMESTAMPTZ '2026-09-27 00:00:00+00', TIMESTAMPTZ '2026-09-27 00:00:00+00', FALSE);
+            """);
     }
 
     protected override void Down(MigrationBuilder migrationBuilder)
