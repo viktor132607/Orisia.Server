@@ -70,9 +70,10 @@ jobs:
       - name: Start isolated API smoke environment
         working-directory: .
         run: |
+          smoke_db_host=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' '${{ job.services.postgres.id }}')
           docker run -d --name orisia-smoke --network host \
             -e ASPNETCORE_ENVIRONMENT=Production \
-            -e ConnectionStrings__DefaultConnection="$ORISIA_TEST_POSTGRES" \
+            -e ConnectionStrings__DefaultConnection="Host=$smoke_db_host;Port=5432;Database=postgres;Username=orisia_ci;Password=ci-only-password;SSL Mode=Disable" \
             -e Seed__DemoData=true \
             -e Jwt__Secret=CiOnlyRandomSigningKeyForOrisiaSmokeTests0123456789abcdefghijklmnopqrstuvwxyz \
             orisia-server:ci
