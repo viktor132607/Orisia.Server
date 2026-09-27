@@ -61,6 +61,8 @@ public static class OrisiaContentSeeder
                 StartAt = new DateTime(2026, 9, 27, 13, 0, 0, DateTimeKind.Utc),
                 EventType = EventType.Performance,
                 Location = "Сцената на Ruse Stage, Русе",
+                MediaType = EventMediaType.Image,
+                MediaUrl = "/events/za-galya.png",
                 Featured = true,
                 Status = PublicationStatus.Published
             },
