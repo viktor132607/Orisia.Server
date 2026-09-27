@@ -32,6 +32,9 @@ public class EventConfiguration : IEntityTypeConfiguration<Event>
         builder.Property(item => item.RecurrenceRule)
             .HasMaxLength(500);
 
+        builder.Property(item => item.MediaUrl)
+            .HasMaxLength(1000);
+
         builder.HasIndex(item => item.Slug)
             .IsUnique()
             .HasFilter("\"IsDeleted\" = false");
