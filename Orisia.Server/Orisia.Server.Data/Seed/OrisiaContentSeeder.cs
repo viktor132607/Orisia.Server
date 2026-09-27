@@ -62,7 +62,7 @@ public static class OrisiaContentSeeder
                 EventType = EventType.Performance,
                 Location = "Сцената на Ruse Stage, Русе",
                 MediaType = EventMediaType.Image,
-                MediaUrl = "/events/za-galya.png",
+                MediaUrl = "/events/za-galya.webp",
                 Featured = true,
                 Status = PublicationStatus.Published
             },
