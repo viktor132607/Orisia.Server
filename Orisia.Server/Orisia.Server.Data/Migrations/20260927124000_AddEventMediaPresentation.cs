@@ -31,7 +31,7 @@ public partial class AddEventMediaPresentation : Migration
         migrationBuilder.Sql("""
             UPDATE "Events"
             SET "MediaType" = 1,
-                "MediaUrl" = '/events/za-galya.png'
+                "MediaUrl" = '/events/za-galya.webp'
             WHERE "Slug" = 'blagotvoritelen-koncert-za-galya-2026'
               AND "MediaType" = 0
               AND "MediaUrl" IS NULL;
