@@ -52,6 +52,20 @@ public static class OrisiaContentSeeder
         [
             new()
             {
+                Slug = "blagotvoritelen-koncert-za-galya-2026",
+                TitleBg = "Благотворителен концерт „За Галя“",
+                TitleEn = "Charity concert “For Galya”",
+                DescriptionBg = "На 27 септември различни хора, таланти и светове се събират на една сцена с една обща цел — да бъдем до Галя.\n\nГаля е преподавател и творец, който е давал знание, музика и изкуство на другите. Сега е наш ред да я подкрепим.\n\nНа сцената: Михаел Лашев — авторска музика; Адриана Витанова; Веселина Няголова — български фолклор; „Сладките на Светлозара Савова“; Даскало за фолклор „Орисия“ — хоротека за малки и големи; аниматорска агенция „БАМ-БАМ“ — специална детска програма с игри и забавления.\n\nЕлате с децата, приятелите и близките си. Нека превърнем този неделен следобед в среща, която има значение.\n\nЕдна сцена. Много сърца. Една кауза — за Галя.",
+                DescriptionEn = "On 27 September, different people, talents and worlds come together on one stage for one shared cause — to support Galya.\n\nGalya is a teacher and artist who has shared knowledge, music and creativity with others. Now it is our turn to stand by her.\n\nOn stage: Mihael Lashev with original music; Adriana Vitanova; Veselina Nyagolova with Bulgarian folklore; Sladkite na Svetlozara Savova; ORISIA Folklore School with an open horoteka for children and adults; and BAM-BAM animation agency with a special children’s programme of games and entertainment.\n\nCome with your children, friends and family. Let us turn this Sunday afternoon into a gathering that matters.\n\nOne stage. Many hearts. One cause — for Galya.",
+                // 16:00 in Ruse on 27 September 2026 is 13:00 UTC (EEST).
+                StartAt = new DateTime(2026, 9, 27, 13, 0, 0, DateTimeKind.Utc),
+                EventType = EventType.Performance,
+                Location = "Сцената на Ruse Stage, Русе",
+                Featured = true,
+                Status = PublicationStatus.Published
+            },
+            new()
+            {
                 Slug = "nachalo-na-grupa-za-nachinaeshti-2026",
                 TitleBg = "Начало на новата група за начинаещи",
                 TitleEn = "New beginners' group begins",
