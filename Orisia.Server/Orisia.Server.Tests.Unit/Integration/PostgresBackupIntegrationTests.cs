@@ -43,8 +43,11 @@ public sealed class PostgresBackupIntegrationTests
                 await UserSeeder.SeedAsync(db);
                 await CmsDemoSeeder.SeedAsync(db);
                 await CmsDemoSeeder.SeedAsync(db);
-                Assert.Equal(1, await db.Posts.CountAsync());
-                Assert.Equal(1, await db.Events.CountAsync());
+                await OrisiaContentSeeder.SeedAsync(db);
+                await OrisiaContentSeeder.SeedAsync(db);
+                Assert.Equal(3, await db.Posts.CountAsync());
+                Assert.Equal(3, await db.Events.CountAsync());
+                Assert.Equal(3, await db.GalleryAlbums.CountAsync());
             }
 
             var before = await SnapshotAsync(settings.ConnectionString);

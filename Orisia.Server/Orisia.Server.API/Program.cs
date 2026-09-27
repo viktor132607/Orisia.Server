@@ -8,6 +8,7 @@ using Orisia.Server.API.ServiceExtensions;
 using Orisia.Server.Common.Options;
 using Orisia.Server.Data;
 using Orisia.Server.Data.Helpers;
+using Orisia.Server.Data.Seed;
 using Orisia.Server.Domain.Authentication;
 using Orisia.Server.Core.StaticClasses;
 using Orisia.Server.API.Services;
@@ -193,6 +194,11 @@ using (IServiceScope scope = app.Services.CreateScope())
         if (app.Environment.IsDevelopment() && developmentOptions.ResetDatabaseOnStart)
         {
             await DatabaseUtils.TruncateAllTablesSafeAsync(db);
+        }
+
+        if (builder.Configuration.GetValue<bool?>("Seed:ContentData") ?? true)
+        {
+            await OrisiaContentSeeder.SeedAsync(db);
         }
 
     }
