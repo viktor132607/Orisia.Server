@@ -21,6 +21,11 @@ public class Event : GenericEntity
 
     public Guid? CoverMediaId { get; set; }
     public Media? CoverMedia { get; set; }
+
+    public EventMediaType MediaType { get; set; } = EventMediaType.None;
+    public string? MediaUrl { get; set; }
+    public string? SlideshowUrlsJson { get; set; }
+
     public bool Featured { get; set; }
 
     public PublicationStatus Status { get; set; } = PublicationStatus.Draft;
