@@ -13,13 +13,14 @@ public static class CmsDemoSeeder
             db.Posts.Add(new Post {
                 Slug = "demo-orisia", TitleBg = "Демо публикация", TitleEn = "Demo post",
                 BodyBg = "Примерно съдържание за тестова среда.", BodyEn = "Sample content for a test environment.",
-                Status = PublicationStatus.Published, PublishedAt = DateTime.UtcNow });
+                MediaUrl = "/events/za-galya.webp", Status = PublicationStatus.Published, PublishedAt = DateTime.UtcNow });
         if (!await db.Events.AnyAsync(e => e.Slug == "demo-rehearsal"))
             db.Events.Add(new Event {
                 Slug = "demo-rehearsal", TitleBg = "Демо репетиция", TitleEn = "Demo rehearsal",
                 DescriptionBg = "Примерно събитие.", DescriptionEn = "Sample event.",
                 StartAt = DateTime.UtcNow.Date.AddDays(7).AddHours(15),
-                EndAt = DateTime.UtcNow.Date.AddDays(7).AddHours(17), Status = PublicationStatus.Published });
+                EndAt = DateTime.UtcNow.Date.AddDays(7).AddHours(17), MediaType = EventMediaType.Image,
+                MediaUrl = "/events/za-galya.webp", Status = PublicationStatus.Published });
         if (!await db.Dances.AnyAsync(d => d.Slug == "demo-pravo-horo"))
             db.Dances.Add(new Dance {
                 Slug = "demo-pravo-horo", TitleBg = "Демо право хоро", TitleEn = "Demo Pravo horo",

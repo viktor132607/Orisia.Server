@@ -7,6 +7,8 @@ namespace Orisia.Server.Data.Seed;
 /// <summary>Initial public content from verified Orisia announcements; never overwrites editorial changes.</summary>
 public static class OrisiaContentSeeder
 {
+    private const string DefaultContentImageUrl = "/events/za-galya.webp";
+
     public static async Task SeedAsync(ApplicationDbContext db, CancellationToken cancellationToken = default)
     {
         // https://www.facebook.com/orisiyaruse/posts/pfbid02P1R7armQVGgFez8hJgCQMu8pDR5idkfwFG2rZEKt2njHeVTsFB1DBT7tXoPwkvcil
@@ -24,6 +26,7 @@ public static class OrisiaContentSeeder
                 BodyBg = "Даскало за фолклор „Орисия“ открива нова група за начинаещи на 12 октомври 2026 г. Занятията са в понеделник и сряда от 19:40 ч. в залата на бул. Родина 80, на гърба на боулинг залата в Русе. За записване и допълнителна информация се свържете с нас чрез страницата ни във Facebook.",
                 BodyEn = "ORISIA Folklore School is opening a new beginners' group on 12 October 2026. Classes are on Mondays and Wednesdays at 19:40 at 80 Rodina Boulevard, behind the bowling hall in Ruse. Contact us through our Facebook page for registration and more information.",
                 Status = PublicationStatus.Published,
+                MediaUrl = DefaultContentImageUrl,
                 Featured = true,
                 PublishedAt = DateTime.UtcNow
             },
@@ -38,6 +41,7 @@ public static class OrisiaContentSeeder
                 BodyBg = "На 4 юли 2026 г. в село Сандрово се проведе XIV фолклорен фестивал „Сандрово пее и танцува“. Във вечерната програма Даскало за фолклор „Орисия“ — Русе представи демонстрации на български народни танци.",
                 BodyEn = "The 14th Sandrovo Sings and Dances folklore festival took place on 4 July 2026. ORISIA Folklore School from Ruse presented Bulgarian folk dance demonstrations during the evening programme.",
                 Status = PublicationStatus.Published,
+                MediaUrl = DefaultContentImageUrl,
                 PublishedAt = DateTime.UtcNow
             }
         ];
@@ -47,6 +51,13 @@ public static class OrisiaContentSeeder
             if (!await db.Posts.AnyAsync(item => item.Slug == post.Slug && !item.IsDeleted, cancellationToken))
                 db.Posts.Add(post);
         }
+
+        List<Post> newsWithoutImage = await db.Posts
+            .Where(item => item.Type == PostType.News && !item.IsDeleted && (item.MediaUrl == null || item.MediaUrl == ""))
+            .ToListAsync(cancellationToken);
+
+        foreach (Post post in newsWithoutImage)
+            post.MediaUrl = DefaultContentImageUrl;
 
         Event[] events =
         [
@@ -77,6 +88,8 @@ public static class OrisiaContentSeeder
                 StartAt = new DateTime(2026, 10, 12, 16, 40, 0, DateTimeKind.Utc),
                 EventType = EventType.Rehearsal,
                 Location = "гр. Русе, бул. Родина 80 (на гърба на боулинг залата)",
+                MediaType = EventMediaType.Image,
+                MediaUrl = DefaultContentImageUrl,
                 Featured = true,
                 Status = PublicationStatus.Published
             },
@@ -91,6 +104,8 @@ public static class OrisiaContentSeeder
                 AllDay = true,
                 EventType = EventType.Festival,
                 Location = "с. Сандрово, община Русе",
+                MediaType = EventMediaType.Image,
+                MediaUrl = DefaultContentImageUrl,
                 Status = PublicationStatus.Published
             }
         ];
@@ -99,6 +114,16 @@ public static class OrisiaContentSeeder
         {
             if (!await db.Events.AnyAsync(existing => existing.Slug == item.Slug && !existing.IsDeleted, cancellationToken))
                 db.Events.Add(item);
+        }
+
+        List<Event> eventsWithoutImage = await db.Events
+            .Where(item => !item.IsDeleted && (item.MediaType == EventMediaType.None || (item.MediaType == EventMediaType.Image && (item.MediaUrl == null || item.MediaUrl == ""))))
+            .ToListAsync(cancellationToken);
+
+        foreach (Event item in eventsWithoutImage)
+        {
+            item.MediaType = EventMediaType.Image;
+            item.MediaUrl = DefaultContentImageUrl;
         }
 
         GalleryAlbum[] albums =

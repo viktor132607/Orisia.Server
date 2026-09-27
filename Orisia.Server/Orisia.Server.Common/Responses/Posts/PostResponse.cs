@@ -23,6 +23,7 @@ public class PostResponse
     public required string SeoDescriptionEn { get; set; }
 
     public Guid? CoverMediaId { get; set; }
+    public string? MediaUrl { get; set; }
     public bool Featured { get; set; }
     public DateTime? PublishedAt { get; set; }
 

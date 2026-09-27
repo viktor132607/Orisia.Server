@@ -98,6 +98,7 @@ public class PostService(
             SeoDescriptionBg = NormalizeOptional(request.SeoDescriptionBg),
             SeoDescriptionEn = NormalizeOptional(request.SeoDescriptionEn),
             CoverMediaId = request.CoverMediaId,
+            MediaUrl = NormalizeOptional(request.MediaUrl),
             Featured = request.Featured,
             AuthorId = authorId
         };
@@ -142,6 +143,7 @@ public class PostService(
             SeoDescriptionBg = NormalizeOptional(request.SeoDescriptionBg),
             SeoDescriptionEn = NormalizeOptional(request.SeoDescriptionEn),
             CoverMediaId = request.CoverMediaId,
+            MediaUrl = NormalizeOptional(request.MediaUrl),
             Featured = request.Featured,
             PublishedAt = existing.PublishedAt,
             AuthorId = existing.AuthorId
@@ -245,6 +247,7 @@ public class PostService(
             SeoDescriptionBg = post.SeoDescriptionBg,
             SeoDescriptionEn = post.SeoDescriptionEn,
             CoverMediaId = post.CoverMediaId,
+            MediaUrl = post.MediaUrl,
             Featured = post.Featured,
             PublishedAt = post.PublishedAt,
             AuthorId = post.AuthorId
@@ -270,6 +273,7 @@ public class PostService(
             SeoDescriptionBg = ResolveSeoDescription(post.SeoDescriptionBg, post.ExcerptBg, post.BodyBg),
             SeoDescriptionEn = ResolveSeoDescription(post.SeoDescriptionEn, post.ExcerptEn, post.BodyEn),
             CoverMediaId = post.CoverMediaId,
+            MediaUrl = post.MediaUrl,
             Featured = post.Featured,
             PublishedAt = post.PublishedAt,
             AuthorId = post.AuthorId,

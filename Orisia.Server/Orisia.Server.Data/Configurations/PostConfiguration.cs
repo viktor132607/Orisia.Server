@@ -38,6 +38,9 @@ public class PostConfiguration : IEntityTypeConfiguration<Post>
         builder.Property(post => post.SeoDescriptionEn)
             .HasMaxLength(180);
 
+        builder.Property(post => post.MediaUrl)
+            .HasMaxLength(1000);
+
         builder.HasIndex(post => post.Slug)
             .IsUnique()
             .HasFilter("\"IsDeleted\" = false");

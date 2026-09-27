@@ -23,6 +23,7 @@ public class Post : GenericEntity
 
     public Guid? CoverMediaId { get; set; }
     public Media? CoverMedia { get; set; }
+    public string? MediaUrl { get; set; }
     public bool Featured { get; set; }
     public DateTime? PublishedAt { get; set; }
 

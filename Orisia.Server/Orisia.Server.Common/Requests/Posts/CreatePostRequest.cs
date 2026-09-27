@@ -43,5 +43,8 @@ public class CreatePostRequest
 
     public Guid? CoverMediaId { get; set; }
 
+    [MaxLength(1000)]
+    public string? MediaUrl { get; set; }
+
     public bool Featured { get; set; }
 }

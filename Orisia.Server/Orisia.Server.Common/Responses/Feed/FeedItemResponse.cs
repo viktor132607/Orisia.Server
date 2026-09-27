@@ -16,6 +16,7 @@ public class FeedItemResponse
     public string? ExcerptEn { get; set; }
 
     public Guid? CoverMediaId { get; set; }
+    public string? MediaUrl { get; set; }
     public bool Featured { get; set; }
 
     public DateTime Date { get; set; }
