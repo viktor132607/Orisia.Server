@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using Orisia.Server.Common.Requests.Events;
 using Orisia.Server.Common.Responses.Events;
@@ -95,6 +96,9 @@ public class EventService(IEventRepository eventRepository) : IEventService
             throw new AppException("An event with this slug already exists.").SetStatusCode(409);
         }
 
+        (EventMediaType mediaType, string? mediaUrl, string? slideshowUrlsJson) =
+            NormalizeMedia(request.MediaType, request.MediaUrl, request.SlideshowUrls);
+
         Event item = new()
         {
             Slug = slug,
@@ -108,6 +112,9 @@ public class EventService(IEventRepository eventRepository) : IEventService
             EventType = request.EventType,
             Location = NormalizeOptional(request.Location),
             CoverMediaId = request.CoverMediaId,
+            MediaType = mediaType,
+            MediaUrl = mediaUrl,
+            SlideshowUrlsJson = slideshowUrlsJson,
             Featured = request.Featured,
             Status = PublicationStatus.Draft,
             RecurrenceRule = RecurrenceRuleValidator.NormalizeAndValidate(request.RecurrenceRule)
@@ -138,6 +145,9 @@ public class EventService(IEventRepository eventRepository) : IEventService
             throw new AppException("An event with this slug already exists.").SetStatusCode(409);
         }
 
+        (EventMediaType mediaType, string? mediaUrl, string? slideshowUrlsJson) =
+            NormalizeMedia(request.MediaType, request.MediaUrl, request.SlideshowUrls);
+
         Event updated = new()
         {
             Id = existing.Id,
@@ -152,6 +162,9 @@ public class EventService(IEventRepository eventRepository) : IEventService
             EventType = request.EventType,
             Location = NormalizeOptional(request.Location),
             CoverMediaId = request.CoverMediaId,
+            MediaType = mediaType,
+            MediaUrl = mediaUrl,
+            SlideshowUrlsJson = slideshowUrlsJson,
             Featured = request.Featured,
             Status = existing.Status,
             RecurrenceRule = RecurrenceRuleValidator.NormalizeAndValidate(request.RecurrenceRule)
@@ -243,6 +256,9 @@ public class EventService(IEventRepository eventRepository) : IEventService
             EventType = item.EventType,
             Location = item.Location,
             CoverMediaId = item.CoverMediaId,
+            MediaType = item.MediaType,
+            MediaUrl = item.MediaUrl,
+            SlideshowUrlsJson = item.SlideshowUrlsJson,
             Featured = item.Featured,
             Status = item.Status,
             RecurrenceRule = item.RecurrenceRule
@@ -265,6 +281,9 @@ public class EventService(IEventRepository eventRepository) : IEventService
             EventType = item.EventType,
             Location = item.Location,
             CoverMediaId = item.CoverMediaId,
+            MediaType = item.MediaType,
+            MediaUrl = item.MediaUrl,
+            SlideshowUrls = ParseSlideshowUrls(item.SlideshowUrlsJson),
             Featured = item.Featured,
             Status = item.Status,
             RecurrenceRule = item.RecurrenceRule,
@@ -334,6 +353,57 @@ public class EventService(IEventRepository eventRepository) : IEventService
         slug = Regex.Replace(slug, "-{2,}", "-").Trim('-');
 
         return slug.Length <= 180 ? slug : slug[..180].TrimEnd('-');
+    }
+
+    private static (EventMediaType MediaType, string? MediaUrl, string? SlideshowUrlsJson) NormalizeMedia(
+        EventMediaType mediaType,
+        string? mediaUrl,
+        IEnumerable<string>? slideshowUrls)
+    {
+        if (!Enum.IsDefined(mediaType))
+            throw new AppException("Invalid event media type.").SetStatusCode(400);
+
+        string? normalizedUrl = NormalizeOptional(mediaUrl);
+        string[] slides = (slideshowUrls ?? [])
+            .Select(NormalizeOptional)
+            .Where(value => value is not null)
+            .Select(value => value!)
+            .Distinct(StringComparer.Ordinal)
+            .Take(20)
+            .ToArray();
+
+        if (normalizedUrl?.Length > 1000 || slides.Any(url => url.Length > 1000))
+            throw new AppException("Media URLs cannot exceed 1000 characters.").SetStatusCode(400);
+
+        return mediaType switch
+        {
+            EventMediaType.None => (EventMediaType.None, null, null),
+            EventMediaType.Image when normalizedUrl is not null => (EventMediaType.Image, normalizedUrl, null),
+            EventMediaType.Video when normalizedUrl is not null => (EventMediaType.Video, normalizedUrl, null),
+            EventMediaType.Slideshow when slides.Length > 0 => (
+                EventMediaType.Slideshow,
+                null,
+                JsonSerializer.Serialize(slides)),
+            EventMediaType.Image => throw new AppException("Image media requires an image URL.").SetStatusCode(400),
+            EventMediaType.Video => throw new AppException("Video media requires a video URL.").SetStatusCode(400),
+            EventMediaType.Slideshow => throw new AppException("Slideshow media requires at least one image.").SetStatusCode(400),
+            _ => throw new AppException("Invalid event media type.").SetStatusCode(400)
+        };
+    }
+
+    private static string[] ParseSlideshowUrls(string? json)
+    {
+        if (string.IsNullOrWhiteSpace(json))
+            return [];
+
+        try
+        {
+            return JsonSerializer.Deserialize<string[]>(json) ?? [];
+        }
+        catch (JsonException)
+        {
+            return [];
+        }
     }
 
     private static string? NormalizeOptional(string? value)
