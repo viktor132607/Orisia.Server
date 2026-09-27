@@ -20,6 +20,11 @@ public class EventResponse
     public string? Location { get; set; }
 
     public Guid? CoverMediaId { get; set; }
+
+    public EventMediaType MediaType { get; set; }
+    public string? MediaUrl { get; set; }
+    public string[] SlideshowUrls { get; set; } = [];
+
     public bool Featured { get; set; }
 
     public PublicationStatus Status { get; set; }
