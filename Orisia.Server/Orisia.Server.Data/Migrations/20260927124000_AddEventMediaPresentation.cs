@@ -1,9 +1,12 @@
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
 namespace Orisia.Server.Data.Migrations;
 
+[DbContext(typeof(ApplicationDbContext))]
+[Migration("20260927124000_AddEventMediaPresentation")]
 public partial class AddEventMediaPresentation : Migration
 {
     protected override void Up(MigrationBuilder migrationBuilder)
