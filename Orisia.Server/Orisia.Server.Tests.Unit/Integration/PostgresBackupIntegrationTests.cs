@@ -46,7 +46,7 @@ public sealed class PostgresBackupIntegrationTests
                 await OrisiaContentSeeder.SeedAsync(db);
                 await OrisiaContentSeeder.SeedAsync(db);
                 Assert.Equal(3, await db.Posts.CountAsync());
-                Assert.Equal(3, await db.Events.CountAsync());
+                Assert.Equal(4, await db.Events.CountAsync());
                 Assert.Equal(3, await db.GalleryAlbums.CountAsync());
             }
 
