@@ -21,8 +21,8 @@ public static class OrisiaContentSeeder
                 TitleEn = "New beginners' group starting 12 October",
                 ExcerptBg = "Народни танци за начинаещи в Русе — понеделник и сряда от 19:40 ч.",
                 ExcerptEn = "Beginner folk dances in Ruse — Mondays and Wednesdays at 19:40.",
-                BodyBg = "Даскало за фолклор „Орисия“ открива нова група за начинаещи на 12 октомври 2026 г. Занятията са в понеделник и сряда от 19:40 ч. в залата на ул. Родина 80, на гърба на боулинг залата в Русе. За записване и допълнителна информация се свържете с нас чрез страницата ни във Facebook.",
-                BodyEn = "ORISIA Folklore School is opening a new beginners' group on 12 October 2026. Classes are on Mondays and Wednesdays at 19:40 at 80 Rodina Street, behind the bowling hall in Ruse. Contact us through our Facebook page for registration and more information.",
+                BodyBg = "Даскало за фолклор „Орисия“ открива нова група за начинаещи на 12 октомври 2026 г. Занятията са в понеделник и сряда от 19:40 ч. в залата на бул. Родина 80, на гърба на боулинг залата в Русе. За записване и допълнителна информация се свържете с нас чрез страницата ни във Facebook.",
+                BodyEn = "ORISIA Folklore School is opening a new beginners' group on 12 October 2026. Classes are on Mondays and Wednesdays at 19:40 at 80 Rodina Boulevard, behind the bowling hall in Ruse. Contact us through our Facebook page for registration and more information.",
                 Status = PublicationStatus.Published,
                 Featured = true,
                 PublishedAt = DateTime.UtcNow
@@ -60,7 +60,7 @@ public static class OrisiaContentSeeder
                 // 19:40 in Ruse on 12 October is 16:40 UTC (summer time).
                 StartAt = new DateTime(2026, 10, 12, 16, 40, 0, DateTimeKind.Utc),
                 EventType = EventType.Rehearsal,
-                Location = "гр. Русе, ул. Родина 80 (на гърба на боулинг залата)",
+                Location = "гр. Русе, бул. Родина 80 (на гърба на боулинг залата)",
                 Featured = true,
                 Status = PublicationStatus.Published
             },
