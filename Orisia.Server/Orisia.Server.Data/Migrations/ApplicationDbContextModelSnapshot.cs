@@ -194,13 +194,6 @@ partial class ApplicationDbContextModelSnapshot : ModelSnapshot
                 .HasMaxLength(300)
                 .HasColumnType("character varying(300)");
 
-            b.Property<int>("MediaType")
-                .HasColumnType("integer");
-
-            b.Property<string>("MediaUrl")
-                .HasMaxLength(1000)
-                .HasColumnType("character varying(1000)");
-
             b.Property<DateTime>("ModifiedOn")
                 .HasColumnType("timestamp with time zone");
 
@@ -307,6 +300,13 @@ partial class ApplicationDbContextModelSnapshot : ModelSnapshot
             b.Property<string>("Location")
                 .HasMaxLength(300)
                 .HasColumnType("character varying(300)");
+
+            b.Property<int>("MediaType")
+                .HasColumnType("integer");
+
+            b.Property<string>("MediaUrl")
+                .HasMaxLength(1000)
+                .HasColumnType("character varying(1000)");
 
             b.Property<DateTime>("ModifiedOn")
                 .HasColumnType("timestamp with time zone");
