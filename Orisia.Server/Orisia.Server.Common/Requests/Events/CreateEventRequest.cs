@@ -35,6 +35,13 @@ public class CreateEventRequest
 
     public Guid? CoverMediaId { get; set; }
 
+    public EventMediaType MediaType { get; set; } = EventMediaType.None;
+
+    [MaxLength(1000)]
+    public string? MediaUrl { get; set; }
+
+    public string[] SlideshowUrls { get; set; } = [];
+
     public bool Featured { get; set; }
 
     [MaxLength(500)]
