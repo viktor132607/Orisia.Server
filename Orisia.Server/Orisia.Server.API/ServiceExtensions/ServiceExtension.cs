@@ -10,7 +10,6 @@ public static class ServiceExtension
 {
     public static IServiceCollection AddCustomServices(this IServiceCollection services)
     {
-        services.AddSingleton<IDatabaseBackupOperationLock, DatabaseBackupOperationLock>();
         services.AddSingleton<IDatabaseBackupArchiveValidator, DatabaseBackupArchiveValidator>();
         services.AddSingleton<IDatabaseBackupFileStore, DatabaseBackupFileStore>();
         services.AddSingleton<IPostgresProcessRunner, PostgresProcessRunner>();
@@ -31,7 +30,6 @@ public static class ServiceExtension
         services.AddTransient<IDanceService, DanceService>();
         services.AddTransient<IInquiryService, InquiryService>();
         services.AddTransient<IAdminDashboardService, AdminDashboardService>();
-        services.AddSingleton<IPasswordResetTokenStore, MemoryPasswordResetTokenStore>();
         services.AddHttpClient<IEmailNotificationService, EmailNotificationService>(http => http.Timeout = TimeSpan.FromSeconds(30));
         services.AddSingleton<IMediaStorage, LocalMediaStorage>();
         services.AddSingleton<IImageProcessor, SkiaSharpImageProcessor>();
