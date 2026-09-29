@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Orisia.Server.Common.Requests.Auth;
 using Orisia.Server.Common.Requests.Users;
 using Orisia.Server.Common.Responses.Auth;
@@ -13,6 +14,7 @@ namespace Orisia.Server.API.Controllers;
 [ApiController]
 public class AuthController(IAuthService authService, IUserService userService) : ControllerBase
 {
+    [EnableRateLimiting("auth")]
     [HttpPost("register")]
     public async Task<ActionResult<RegisterUserResponse>> Register(RegisterUserRequest request)
     {
@@ -21,6 +23,7 @@ public class AuthController(IAuthService authService, IUserService userService) 
         return Ok(user);
     }
 
+    [EnableRateLimiting("auth")]
     [HttpPost("login")]
     public async Task<ActionResult<TokenResponse>> Login(LoginUserRequest request)
     {
@@ -33,6 +36,7 @@ public class AuthController(IAuthService authService, IUserService userService) 
         return Ok(result);
     }
 
+    [EnableRateLimiting("auth")]
     [HttpPost("forgot-password")]
     public async Task<ActionResult<ForgotPasswordResponse>> ForgotPassword(ForgotPasswordRequest request)
     {
@@ -40,6 +44,7 @@ public class AuthController(IAuthService authService, IUserService userService) 
         return Ok(result);
     }
 
+    [EnableRateLimiting("auth")]
     [HttpPost("reset-password")]
     public async Task<IActionResult> ResetPassword(ResetPasswordRequest request)
     {
@@ -48,6 +53,7 @@ public class AuthController(IAuthService authService, IUserService userService) 
     }
 
     [Authorize]
+    [EnableRateLimiting("auth")]
     [HttpPost("change-password")]
     public async Task<IActionResult> ChangePassword(ChangePasswordRequest request)
     {
@@ -77,6 +83,7 @@ public class AuthController(IAuthService authService, IUserService userService) 
         return Ok();
     }
 
+    [EnableRateLimiting("auth")]
     [HttpPost("refresh-token")]
     public async Task<ActionResult<TokenResponse>> RefreshToken(RefreshTokenRequest request)
     {
