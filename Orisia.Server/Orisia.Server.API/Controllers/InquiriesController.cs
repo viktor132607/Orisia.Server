@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Orisia.Server.Common.Requests.Inquiries;
 using Orisia.Server.Common.Responses.Inquiries;
 using Orisia.Server.Core.Enums;
@@ -13,6 +14,7 @@ namespace Orisia.Server.API.Controllers;
 public class InquiriesController(IInquiryService inquiryService) : ControllerBase
 {
     [AllowAnonymous]
+    [EnableRateLimiting("inquiry")]
     [HttpPost]
     public async Task<ActionResult<ContactInquiryResponse>> Submit(
         [FromBody] CreateInquiryRequest request)
